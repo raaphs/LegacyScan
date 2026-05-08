@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Legacy Scan: O Portal dos Sete Povos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: sans-serif;
+        }
+
+        /* A cena AR é injetada dinamicamente — evita pedido de câmera antes do clique */
+        #ar-container {
+            position: fixed; inset: 0; z-index: 1;
+            display: none;
+        }
+        #ar-container video,
+        #ar-container canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover !important;
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+        }
+
+        #ui-layer {
+            position: fixed; inset: 0;
+            z-index: 100;
+            pointer-events: none;
+            display: flex; flex-direction: column;
+        }
+        .interactive { pointer-events: auto; }
+
+        /* Landing */
+        #landing-page {
+            position: fixed; inset: 0;
+            background: linear-gradient(rgba(0,0,0,0.85), rgba(61,43,31,0.95)),
+                        url('https://images.unsplash.com/photo-1590012314607-cda9d9b699ae?q=80&w=1000') center/cover;
+            z-index: 200;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center; color: white; padding: 2rem;
+        }
+
+        /* HUD */
+        .inventory-slot {
+            width: 58px; height: 58px;
+            background: rgba(0,0,0,0.75);
+            border: 2px solid #8b4513;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: grayscale(100%); opacity: 0.4;
+        }
+        .inventory-slot.active {
+            filter: grayscale(0%); opacity: 1;
+            border-color: #ffd700;
+            box-shadow: 0 0 18px #ffd700;
+            transform: scale(1.12);
+        }
+
+        #msg-popup {
+            background: rgba(30, 15, 5, 0.92);
+            color: #ffd700;
+            padding: 10px 22px;
+            border-radius: 30px;
+            border: 2px solid #ffd700;
+            font-weight: bold;
+            margin-top: 16px;
+            opacity: 0;
+            transition: opacity 0.35s, transform 0.35s;
+            transform: translateY(16px);
+            text-align: center;
+            max-width: 85%;
+            font-size: 14px;
+        }
+        #msg-popup.visible { opacity: 1; transform: translateY(0); }
+
+        /* Painel de simulação (para quando câmera não funciona) */
+        #sim-panel {
+            position: fixed;
+            bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 150;
+            background: rgba(0,0,0,0.85);
+            border: 2px solid #555;
+            border-radius: 16px;
+            padding: 14px 20px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+            min-width: 280px;
+        }
+        #sim-panel p {
+            color: #aaa; font-size: 11px; margin: 0; text-align: center;
+        }
+        #sim-panel strong { color: #ffd700; }
+        .sim-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .sim-btn {
+            background: rgba(255,255,255,0.08);
+            color: white; border: 1px solid #555;
+            border-radius: 8px; padding: 7px 14px;
+            font-size: 13px; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sim-btn:active { background: rgba(255,255,255,0.2); }
+        .sim-btn.collected { border-color: #ffd700; color: #ffd700; }
+        .sim-btn.portal-btn { border-color: #88f; color: #aaf; }
+        .sim-btn.portal-btn.unlocked { border-color: #5f5; color: #8f8; }
+
+        /* Tela final */
+        #win-screen {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.97);
+            z-index: 300;
+            flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center; padding: 2rem; color: white;
+        }
+
+        /* Ocultar botões nativos do A-Frame */
+        .a-enter-vr, .a-enter-ar, .arjs-loader, .a-enter-vr-button { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- Container onde a cena AR será injetada depois do clique -->
+<div id="ar-container"></div>
+
+<div id="ui-layer">
+
+    <!-- 1. Landing Page -->
+    <div id="landing-page">
+        <h1 class="text-4xl font-serif font-bold text-yellow-500 mb-2 tracking-tighter uppercase">Legacy Scan</h1>
+        <h2 class="text-lg italic text-yellow-100 mb-8 opacity-80">O Portal dos Sete Povos</h2>
+        <p class="max-w-xs mb-6 text-sm leading-relaxed">
+            As Missões perderam a sua cor. Escaneie as imagens sagradas, colete as chaves e ative os portais para restaurar a memória dos Sete Povos.
+        </p>
+
+        <!-- Aviso sobre câmera -->
+        <div class="bg-yellow-900/50 border border-yellow-600 rounded-xl p-3 max-w-xs mb-8 text-xs text-yellow-200">
+            ⚠️ Permita acesso à câmera quando solicitado. Funciona melhor no Chrome/Safari em HTTPS ou localhost.
+        </div>
+
+        <button onclick="startApp()" class="interactive bg-yellow-700 hover:bg-yellow-600 px-10 py-4 rounded-full font-bold text-lg border-2 border-yellow-500 shadow-2xl transition-all active:scale-95 text-yellow-100 uppercase tracking-widest mb-4">
+            Iniciar Missão
+        </button>
+        <button onclick="startSimMode()" class="interactive text-sm text-yellow-500 underline opacity-70 hover:opacity-100">
+            Modo simulação (sem câmera)
+        </button>
+    </div>
+
+    <!-- 2. HUD -->
+    <div id="game-hud" class="hidden w-full pt-6 flex flex-col items-center">
+        <div class="flex gap-4">
+            <div id="slot-cuia" class="inventory-slot" title="Cuia">🧉</div>
+            <div id="slot-cruz" class="inventory-slot" title="Cruz">✝️</div>
+            <div id="slot-lanca" class="inventory-slot" title="Lança">🔱</div>
+        </div>
+        <div id="msg-popup">Aponte a câmera para uma imagem marcador...</div>
+    </div>
+
+    <!-- 3. Tela Final -->
+    <div id="win-screen">
+        <h2 class="text-3xl font-bold text-yellow-500 mb-4 uppercase">Legado Restaurado!</h2>
+        <p class="text-gray-300 mb-8 text-sm max-w-xs">A união da tecnologia e cultura salvou a memória missioneira.</p>
+        <div class="w-44 h-72 bg-gradient-to-t from-yellow-900 to-orange-500 rounded-xl border-4 border-yellow-400 flex flex-col items-center justify-center mb-8 shadow-[0_0_40px_rgba(255,215,0,0.35)]">
+            <p class="text-white font-black text-xl">START</p>
+            <p class="text-white text-[10px] tracking-widest uppercase">Unisinos</p>
+        </div>
+        <button onclick="location.reload()" class="interactive bg-white text-black px-8 py-3 rounded-full font-bold uppercase text-sm">Recomeçar</button>
+    </div>
+</div>
+
+<!-- Painel de simulação (ficará visível em modo sim) -->
+<div id="sim-panel">
+    <p><strong>Modo Simulação</strong> — câmera não disponível</p>
+    <p>Simule escanear as imagens:</p>
+    <div class="sim-row">
+        <button id="sbtn-cuia" class="sim-btn" onclick="collect('cuia')">🧉 Escanear Cuia</button>
+        <button id="sbtn-cruz" class="sim-btn" onclick="collect('cruz')">✝️ Escanear Cruz</button>
+        <button id="sbtn-lanca" class="sim-btn" onclick="collect('lanca')">🔱 Escanear Lança</button>
+    </div>
+    <p style="margin-top:6px">Ativar portais:</p>
+    <div class="sim-row">
+        <button id="pbtn-1" class="sim-btn portal-btn" onclick="activatePortal(1,'lanca')">Portal 1 (Lança)</button>
+        <button id="pbtn-2" class="sim-btn portal-btn" onclick="activatePortal(2,'cruz')">Portal 2 (Cruz)</button>
+        <button id="pbtn-3" class="sim-btn portal-btn" onclick="activatePortal(3,'cuia')">Portal 3 (Cuia)</button>
+    </div>
+</div>
+
+<!-- =====================================================
+     SCRIPTS A-FRAME + AR.JS (carregados sob demanda)
+     ===================================================== -->
+<script>
+    const state = {
+        inventory: { cuia: false, cruz: false, lanca: false },
+        portals:   { p1: false, p2: false, p3: false },
+        simMode: false
+    };
+
+    /* ── Força câmera a cobrir a tela ── */
+    function fixCamera() {
+        const vid = document.querySelector('video');
+        const cvs = document.querySelector('.a-canvas');
+        if (vid) { vid.style.cssText = 'width:100vw!important;height:100vh!important;object-fit:cover!important;position:fixed!important;top:0!important;left:0!important;'; }
+        if (cvs) { cvs.style.cssText = 'width:100vw!important;height:100vh!important;position:fixed!important;top:0!important;left:0!important;'; }
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    /* ── Monta a cena AR dinamicamente (só após clique do usuário) ── */
+    function buildARScene() {
+        const container = document.getElementById('ar-container');
+        container.style.display = 'block';
+
+        container.innerHTML = `
+        <a-scene
+            embedded
+            arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false; detectionMode: mono_and_matrix; trackingMethod: best; patternRatio: 0.75;"
+            vr-mode-ui="enabled: false"
+            renderer="antialias: true; alpha: true; precision: medium;"
+            loading-screen="enabled: false"
+            cursor="rayOrigin: mouse"
+            raycaster="objects: .clickable">
+
+            <a-assets timeout="30000">
+                <a-asset-item id="modelo-cuia" src="./models/cuia.glb"></a-asset-item>
+                <a-asset-item id="modelo-cruz" src="./models/cruz.glb"></a-asset-item>
+                <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
+            </a-assets>
+
+            <!-- CHAVE 1: CUIA -->
+            <a-nft
+                type="nft"
+                url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
+                smooth="true"
+                smoothCount="10"
+                smoothTolerance="0.01"
+                smoothThreshold="5"
+                id="marker-cuia"
+                emitevents="true">
+                <a-entity
+                    id="entity-cuia"
+                    class="clickable"
+                    #gltf-model="modelo-cuia"
+                    position="0 0 0"
+                    rotation="-90 0 0"
+                    scale="5 5 5">
+                    <!-- Cuia: esfera marrom sobre cilindro -->
+                    <a-cylinder color="#5d3a1a" radius="0.08" height="0.06" position="0 -0.05 0"></a-cylinder>
+                    <a-sphere color="#8b5e3c" radius="0.1" position="0 0.06 0"></a-sphere>
+                    <a-text value="CUIA\nToque!" align="center" position="0 0.3 0" scale="0.3 0.3 0.3" color="#ffd700"></a-text>
+                </a-entity>
+            </a-nft>
+
+            <!-- CHAVE 2: CRUZ -->
+            <a-nft
+                type="nft"
+                url="./markers/cruz"
+                smooth="true" 
+                smoothCount="10" 
+                smoothTolerance="0.01" 
+                smoothThreshold="5"
+                id="marker-cruz"
+                emitevents="true">
+                <a-entity
+                    id="entity-cruz"
+                    class="clickable"
+                    gltf-model="#modelo-cruz"
+                    position="0 0 0"
+                    rotation="-90 0 0"
+                    scale="20 20 20">
+                    <a-light type="point" color="orange" intensity="1.5" position="0 0.2 0"></a-light>
+                    <a-text value="CRUZ\nToque!" align="center" position="0 0.5 0" scale="0.3 0.3 0.3" color="#ffd700"></a-text>
+                </a-entity>
+            </a-nft>
+
+            <!-- CHAVE 3: LANÇA
+                 Substitua a URL pelo caminho do seu marker de lança -->
+            <a-nft
+                type="nft"
+                url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
+                smooth="true" 
+                smoothCount="10" 
+                smoothTolerance="0.01" 
+                smoothThreshold="5"
+                id="marker-lanca"
+                emitevents="true">
+                <a-entity
+                    id="entity-lanca"
+                    class="clickable"
+                    gltf-model="#modelo-lanca"
+                    position="0 0 0"
+                    rotation="-90 0 0"
+                    scale="5 5 5">
+                    <!-- Lança: cabo + ponta -->
+                    <a-cylinder color="#5d4037" radius="0.025" height="0.5" position="0 0.1 0"></a-cylinder>
+                    <a-cone color="#90a4ae" radius-bottom="0.06" height="0.15" position="0 0.42 0"></a-cone>
+                    <a-text value="LANÇA\nToque!" align="center" position="0 0.65 0" scale="0.3 0.3 0.3" color="#ffd700"></a-text>
+                </a-entity>
+            </a-nft>
+
+            <!-- PORTAL 1: exige lança -->
+            <a-nft
+                type="nft"
+                url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
+                smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5"
+                id="marker-portal1">
+                <a-entity id="portal-1" class="clickable" position="0 0 0" scale="5 5 5">
+                    <a-box position="0 0.2 0" width="0.3" height="0.4" depth="0.04" color="#222" opacity="0.9">
+                        <a-plane id="content-1" visible="false" position="0 0 0.025" width="0.26" height="0.36" color="white">
+                            <a-text value="GRAFISMO\nGUARANI\nRESTAURADO" align="center" color="#d84315" width="1.5" position="0 0 0.01"></a-text>
+                        </a-plane>
+                        <a-text id="txt-1" value="BLOQUEADO\nPrecisa: Lanca" align="center" position="0 0 0.025" color="#ff4444" width="1.5"></a-text>
+                    </a-box>
+                </a-entity>
+            </a-nft>
+
+            <!-- PORTAL 2: exige cruz -->
+            <a-nft
+                type="nft"
+                url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
+                smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5"
+                id="marker-portal2">
+                <a-entity id="portal-2" class="clickable" position="0 0 0" scale="5 5 5">
+                    <a-box position="0 0.2 0" width="0.3" height="0.4" depth="0.04" color="#222" opacity="0.9">
+                        <a-plane id="content-2" visible="false" position="0 0 0.025" width="0.26" height="0.36" color="white">
+                            <a-text value="SINO\nMISSIONEIRO\nRESTAURADO" align="center" color="#ff8f00" width="1.5" position="0 0 0.01"></a-text>
+                        </a-plane>
+                        <a-text id="txt-2" value="BLOQUEADO\nPrecisa: Cruz" align="center" position="0 0 0.025" color="#ff4444" width="1.5"></a-text>
+                    </a-box>
+                </a-entity>
+            </a-nft>
+
+            <!-- PORTAL 3: exige cuia -->
+            <a-nft
+                type="nft"
+                url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
+                smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5"
+                id="marker-portal3">
+                <a-entity id="portal-3" class="clickable" position="0 0 0" scale="5 5 5">
+                    <a-box position="0 0.2 0" width="0.3" height="0.4" depth="0.04" color="#222" opacity="0.9">
+                        <a-plane id="content-3" visible="false" position="0 0 0.025" width="0.26" height="0.36" color="white">
+                            <a-text value="ERVAIS\nSAGRADOS\nRESTAURADOS" align="center" color="#2e7d32" width="1.5" position="0 0 0.01"></a-text>
+                        </a-plane>
+                        <a-text id="txt-3" value="BLOQUEADO\nPrecisa: Cuia" align="center" position="0 0 0.025" color="#ff4444" width="1.5"></a-text>
+                    </a-box>
+                </a-entity>
+            </a-nft>
+
+            <!-- A-Frame cria câmera automaticamente com AR.js — NÃO adicionar <a-entity camera> aqui -->
+        </a-scene>`;
+
+        /* Aguarda A-Frame inicializar e adiciona listeners */
+        const waitScene = setInterval(() => {
+            const scene = container.querySelector('a-scene');
+            if (scene && scene.hasLoaded) {
+                clearInterval(waitScene);
+                setupInteractions();
+                [500, 1500, 3000].forEach(ms => setTimeout(fixCamera, ms));
+            }
+        }, 300);
+
+        /* Listener de erro de câmera */
+        navigator.mediaDevices && navigator.mediaDevices.getUserMedia({ video: true })
+            .catch(() => {
+                notify('Câmera indisponível. Use o painel de simulação abaixo.');
+                document.getElementById('sim-panel').style.display = 'flex';
+            });
+    }
+
+    /* ── Inicia o app com AR ── */
+    function startApp() {
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('game-hud').classList.remove('hidden');
+
+        /* Carrega A-Frame e AR.js, depois monta a cena */
+        notify('Carregando AR...');
+        const scripts = [
+            'https://aframe.io/releases/1.3.0/aframe.min.js',
+            'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js'
+        ];
+        
+        let loaded = 0;
+        scripts.forEach(src => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = () => {
+                loaded++;
+                if (loaded === scripts.length) {
+                    setTimeout(buildARScene, 300);
+                }
+            };
+            s.onerror = () => {
+                notify('Falha ao carregar AR. Usando simulação.');
+                document.getElementById('sim-panel').style.display = 'flex';
+            };
+            document.head.appendChild(s);
+        });
+    }
+
+    /* ── Modo simulação sem câmera ── */
+    function startSimMode() {
+        state.simMode = true;
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('game-hud').classList.remove('hidden');
+        document.getElementById('sim-panel').style.display = 'flex';
+        document.body.style.background = '#1a1a1a';
+        notify('Modo simulação ativo. Use os botões abaixo!');
+    }
+
+    /* ── Lógica de jogo ── */
+    function collect(item) {
+        if (state.inventory[item]) { notify(`Você já tem a ${item}.`); return; }
+        state.inventory[item] = true;
+        document.getElementById(`slot-${item}`).classList.add('active');
+
+        /* Oculta objeto AR se existir */
+        const entity = document.getElementById(`entity-${item}`);
+        if (entity) { entity.setAttribute('visible', 'false'); entity.classList.remove('clickable'); }
+
+        /* Atualiza botão de simulação */
+        const btn = document.getElementById(`sbtn-${item}`);
+        if (btn) { btn.classList.add('collected'); btn.disabled = true; btn.style.opacity = '0.5'; }
+
+        notify(`✅ Chave ${item.toUpperCase()} coletada!`);
+    }
+
+    function activatePortal(num, requiredItem) {
+        if (state.portals[`p${num}`]) { notify(`Portal ${num} já está ativo.`); return; }
+
+        if (state.inventory[requiredItem]) {
+            state.portals[`p${num}`] = true;
+            const content = document.getElementById(`content-${num}`);
+            const txt = document.getElementById(`txt-${num}`);
+            if (content) content.setAttribute('visible', 'true');
+            if (txt)     txt.setAttribute('visible', 'false');
+
+            const pbtn = document.getElementById(`pbtn-${num}`);
+            if (pbtn) { pbtn.classList.add('unlocked'); pbtn.disabled = true; pbtn.style.opacity = '0.5'; }
+
+            notify(`🌟 Portal ${num} restaurado!`);
+            checkWin();
+        } else {
+            notify(`🔒 Bloqueado! Colete a ${requiredItem.toUpperCase()} primeiro.`);
+        }
+    }
+
+    function notify(text) {
+        const el = document.getElementById('msg-popup');
+        if (!el) return;
+        el.innerText = text;
+        el.classList.add('visible');
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('visible'), 3200);
+    }
+
+    function checkWin() {
+        if (state.portals.p1 && state.portals.p2 && state.portals.p3) {
+            setTimeout(() => {
+                const ws = document.getElementById('win-screen');
+                ws.style.display = 'flex';
+                document.getElementById('game-hud').classList.add('hidden');
+                document.getElementById('sim-panel').style.display = 'none';
+            }, 1200);
+        }
+    }
+
+    /* ── Listeners nos objetos AR (chamado após A-Frame carregar) ── */
+    function setupInteractions() {
+        const bindClick = (id, fn) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            ['click', 'mousedown'].forEach(ev => el.addEventListener(ev, fn));
+        };
+
+        bindClick('entity-cuia',  () => collect('cuia'));
+        bindClick('entity-cruz',  () => collect('cruz'));
+        bindClick('entity-lanca', () => collect('lanca'));
+        bindClick('portal-1',     () => activatePortal(1, 'lanca'));
+        bindClick('portal-2',     () => activatePortal(2, 'cruz'));
+        bindClick('portal-3',     () => activatePortal(3, 'cuia'));
+
+        notify('AR ativo! Aponte para os marcadores.');
+    }
+</script>
+
+</body>
+</html>
