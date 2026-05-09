@@ -241,7 +241,7 @@
             <!-- CHAVE 1: CUIA -->
             <a-nft
                 type="nft"
-                url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
+                url="./markers/chimas"
                 smooth="true"
                 smoothCount="10"
                 smoothTolerance="0.01"
@@ -251,13 +251,10 @@
                 <a-entity
                     id="entity-cuia"
                     class="clickable"
-                    #gltf-model="modelo-cuia"
+                    #gltf-model="#modelo-cuia"
                     position="0 0 0"
                     rotation="-90 0 0"
                     scale="5 5 5">
-                    <!-- Cuia: esfera marrom sobre cilindro -->
-                    <a-cylinder color="#5d3a1a" radius="0.08" height="0.06" position="0 -0.05 0"></a-cylinder>
-                    <a-sphere color="#8b5e3c" radius="0.1" position="0 0.06 0"></a-sphere>
                     <a-text value="CUIA\nToque!" align="center" position="0 0.3 0" scale="0.3 0.3 0.3" color="#ffd700"></a-text>
                 </a-entity>
             </a-nft>
@@ -288,7 +285,7 @@
                  Substitua a URL pelo caminho do seu marker de lança -->
             <a-nft
                 type="nft"
-                url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
+                url="./markers/lanca"
                 smooth="true" 
                 smoothCount="10" 
                 smoothTolerance="0.01" 
@@ -302,9 +299,6 @@
                     position="0 0 0"
                     rotation="-90 0 0"
                     scale="5 5 5">
-                    <!-- Lança: cabo + ponta -->
-                    <a-cylinder color="#5d4037" radius="0.025" height="0.5" position="0 0.1 0"></a-cylinder>
-                    <a-cone color="#90a4ae" radius-bottom="0.06" height="0.15" position="0 0.42 0"></a-cone>
                     <a-text value="LANÇA\nToque!" align="center" position="0 0.65 0" scale="0.3 0.3 0.3" color="#ffd700"></a-text>
                 </a-entity>
             </a-nft>
