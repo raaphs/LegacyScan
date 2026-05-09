@@ -216,12 +216,7 @@
         if (cvs) { cvs.style.cssText = 'width:100vw!important;height:100vh!important;position:fixed!important;top:0!important;left:0!important;'; }
         window.dispatchEvent(new Event('resize'));
     }
-    /*<a-assets timeout="30000">
-                <a-asset-item id="modelo-cuia" src="./models/cuia.glb"></a-asset-item>
-                <a-asset-item id="modelo-cruz" src="./models/cruz.glb"></a-asset-item>
-                <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
-            </a-assets>*/
-            
+
     /* ── Monta a cena AR dinamicamente (só após clique do usuário) ── */
     function buildARScene() {
         const container = document.getElementById('ar-container');
@@ -236,6 +231,12 @@
             loading-screen="enabled: false"
             cursor="rayOrigin: mouse"
             raycaster="objects: .clickable">
+
+            <a-assets timeout="300">
+                <a-asset-item id="modelo-cuia" src="./models/cuia.glb"></a-asset-item>
+                <a-asset-item id="modelo-cruz" src="./models/cruz.glb"></a-asset-item>
+                <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
+            </a-assets>
 
             <!-- CHAVE 1: CUIA -->
             <a-nft
