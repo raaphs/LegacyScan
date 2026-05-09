@@ -225,9 +225,9 @@
         container.innerHTML = `
         <a-scene
             embedded
-            arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false; detectionMode: mono_and_matrix; trackingMethod: best; patternRatio: 0.75;"
+            arjs="sourceType: webcam; facingMode: environment; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960; detectionMode: mono_and_matrix; trackingMethod: best;"
             vr-mode-ui="enabled: false"
-            renderer="antialias: true; alpha: true; precision: medium;"
+            renderer="logarithmicDepthBuffer: true; precision: medium; antialias: false; alpha: true;"
             loading-screen="enabled: false"
             cursor="rayOrigin: mouse"
             raycaster="objects: .clickable">
@@ -486,6 +486,22 @@
 
         notify('AR ativo! Aponte para os marcadores.');
     }
+
+    /* Patch específico pra mobile — força playsinline e dá play no vídeo */
+    (function fixMobileVideo() {
+        const observer = new MutationObserver(() => {
+            const vid = document.querySelector('video');
+            if (vid && !vid.dataset.fixed) {
+                vid.dataset.fixed = '1';
+                vid.setAttribute('playsinline', '');
+                vid.setAttribute('webkit-playsinline', '');
+                vid.muted = true;
+                vid.autoplay = true;
+                vid.play().then(() => log('▶️ Vídeo dando play')).catch(e => log('❌ Play falhou: ' + e.message));
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    })();
 </script>
 
 </body>
