@@ -233,13 +233,31 @@
             raycaster="objects: .clickable">
 
             <a-assets timeout="100">
-                <a-asset-item id="modelo-cuia" src="./models/chimas.glb"></a-asset-item>
+                <a-asset-item id="modelo-cuia" src="./models/cuia.glb"></a-asset-item>
                 <a-asset-item id="modelo-cruz" src="./models/cruz.glb"></a-asset-item>
                 <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
             </a-assets>
 
             <!-- CHAVE 1: CUIA -->
-            
+            <a-nft
+                type="nft"
+                url="./markers/cuia"
+                smooth="true"
+                smoothCount="10"
+                smoothTolerance="0.01"
+                smoothThreshold="5"
+                id="marker-cuia"
+                emitevents="true">
+                <a-entity
+                    id="entity-cuia"
+                    class="clickable"
+                    #gltf-model="#modelo-cuia"
+                    position="0 0 0"
+                    rotation="-90 0 0"
+                    scale="5 5 5">
+                    <a-text value="CUIA\nToque!" align="center" position="0 0.3 0" scale="0.3 0.3 0.3" color="#ffd700"></a-text>
+                </a-entity>
+            </a-nft>
 
             <!-- CHAVE 2: CRUZ -->
             <a-nft
