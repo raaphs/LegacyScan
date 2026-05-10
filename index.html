@@ -20,6 +20,21 @@
  
         #ar-container { position: fixed; inset: 0; z-index: 1; display: none; }
  
+        /* Força câmera + canvas a ocuparem a tela inteira (object-fit: cover
+           corta o excesso em vez de mostrar barras pretas) */
+        #ar-container,
+        #ar-container > .a-canvas,
+        #ar-container video,
+        body > video,
+        body > canvas.a-canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
+ 
         #ui-layer {
             position: fixed; inset: 0;
             z-index: 100;
@@ -219,7 +234,6 @@
         simMode: false
     };
  
-    /* targetIndex → chave do jogo. Ordem segue a do compilador MindAR. */
     const TARGET_MAP = ['cuia', 'cruz', 'lanca', 'p1', 'p2', 'p3'];
  
     function startApp() {
@@ -263,36 +277,30 @@
             <a-light type="ambient" color="#ffffff" intensity="0.8"></a-light>
             <a-light type="directional" color="#ffffff" intensity="0.6" position="1 1 1"></a-light>
  
-            <!-- =========================================================
-                 TARGET 0: Cuia (GLB)
-                 Ajustes que você provavelmente vai querer fazer:
-                   position="X Y Z" → X horizontal, Y vertical no plano, Z altura
-                   rotation="X Y Z" → graus em cada eixo
-                   scale="X Y Z"    → tamanho (igual nos 3 mantém proporção)
-                 ========================================================= -->
+            <!-- TARGET 0: Cuia -->
             <a-entity mindar-image-target="targetIndex: 0" id="target-cuia">
                 <a-entity id="entity-cuia"
                           gltf-model="#modelo-cuia"
                           position="0 0 0.05"
-                          rotation="-90 0 0"
+                          rotation="90 0 0"
                           scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
  
-            <!-- TARGET 1: Cruz (GLB) -->
+            <!-- TARGET 1: Cruz -->
             <a-entity mindar-image-target="targetIndex: 1" id="target-cruz">
                 <a-entity id="entity-cruz"
                           gltf-model="#modelo-cruz"
                           position="0 0 0.05"
-                          rotation="-90 0 0"
+                          rotation="90 0 0"
                           scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
  
-            <!-- TARGET 2: Lança (GLB) -->
+            <!-- TARGET 2: Lança -->
             <a-entity mindar-image-target="targetIndex: 2" id="target-lanca">
                 <a-entity id="entity-lanca"
                           gltf-model="#modelo-lanca"
                           position="0 0 0.05"
-                          rotation="-90 0 0"
+                          rotation="90 0 0"
                           scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
  
