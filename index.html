@@ -72,7 +72,6 @@
         }
         #msg-popup.visible { opacity: 1; transform: translateY(0); }
  
-        /* Botões grandes de TAP — alternativa garantida ao clique 3D em mobile */
         #tap-buttons {
             position: fixed;
             bottom: 24px; left: 50%;
@@ -141,31 +140,12 @@
             text-align: center; padding: 2rem; color: white;
         }
  
-        #debug-log {
-            position: fixed;
-            top: 4px; left: 4px; right: 4px;
-            z-index: 9999;
-            background: rgba(0,0,0,0.85);
-            color: #0f0;
-            font: 10px/1.4 monospace;
-            padding: 6px 8px;
-            border-radius: 6px;
-            max-height: 35vh;
-            overflow-y: auto;
-            display: none;
-            pointer-events: none;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        body.show-debug #debug-log { display: block; }
- 
         .a-enter-vr, .a-enter-ar, .a-enter-vr-button { display: none !important; }
         .mindar-ui-overlay { display: none !important; }
     </style>
 </head>
 <body>
  
-<div id="debug-log"></div>
 <div id="ar-container"></div>
  
 <div id="ui-layer">
@@ -209,7 +189,6 @@
     </div>
 </div>
  
-<!-- BOTÕES DE TAP — aparecem quando marker está visível -->
 <div id="tap-buttons">
     <button id="tap-cuia"  class="tap-btn" title="Coletar Cuia"  onclick="collect('cuia')">🧉</button>
     <button id="tap-cruz"  class="tap-btn" title="Coletar Cruz"  onclick="collect('cruz')">✝️</button>
@@ -234,40 +213,19 @@
 </div>
  
 <script>
-    /* =================================================================
-       LOG VISÍVEL
-       ================================================================= */
-    const dbg = document.getElementById('debug-log');
-    function log(msg) {
-        const t = new Date().toTimeString().slice(0,8);
-        const line = `[${t}] ${msg}`;
-        console.log(line);
-        if (dbg) dbg.textContent = (dbg.textContent + '\n' + line).slice(-2000);
-    }
-    if (location.search.includes('debug=1')) document.body.classList.add('show-debug');
-    window.addEventListener('error', e => { document.body.classList.add('show-debug'); log('❌ ' + e.message); });
- 
-    /* =================================================================
-       ESTADO
-       ================================================================= */
     const state = {
         inventory: { cuia: false, cruz: false, lanca: false },
         portals:   { p1: false, p2: false, p3: false },
         simMode: false
     };
  
+    /* targetIndex → chave do jogo. Ordem segue a do compilador MindAR. */
     const TARGET_MAP = ['cuia', 'cruz', 'lanca', 'p1', 'p2', 'p3'];
  
-    /* =================================================================
-       INÍCIO
-       ================================================================= */
     function startApp() {
-        log('🚀 startApp()');
-        if (!window.AFRAME) { alert('A-Frame não carregou.'); return; }
- 
+        if (!window.AFRAME) { alert('A-Frame não carregou. Verifique sua conexão.'); return; }
         document.getElementById('landing-page').style.display = 'none';
         document.getElementById('game-hud').classList.remove('hidden');
- 
         notify('Iniciando AR...');
         setTimeout(buildARScene, 100);
     }
@@ -281,34 +239,7 @@
         notify('Modo simulação ativo.');
     }
  
-    /* =================================================================
-       CENA MindAR
-       =================================================================
- 
-       SISTEMA DE COORDENADAS DO MindAR — IMPORTANTE
-       ----------------------------------------------
-       O marker é tratado como um plano de tamanho 1 unidade na horizontal.
-       A altura depende do aspect ratio da sua imagem (ex: imagem 4:3 → altura ~0.75).
- 
-       Origem (0,0,0) = CANTO SUPERIOR ESQUERDO
-       X cresce pra direita (0 a 1)
-       Y cresce pra BAIXO (eixo invertido, então valores negativos sobem)
-       Z sai do marker em direção à câmera (positivo)
- 
-       Portanto:
-       - Pra centralizar no marker: position="0.5 -0.5 0" (assumindo aspect quadrado)
-       - Pra ficar EM CIMA do marker: Z positivo (ex: 0.1)
-       - Pra ficar flutuando acima: Z maior
- 
-       Como a altura do marker depende do aspect ratio, a forma mais segura
-       de centralizar é usar uma estrutura aninhada:
-       <a-entity position="0.5 -0.5 0">  ← ponto central aproximado
-           <a-entity ...modelo aqui...>   ← coordenadas relativas ao centro
-       </a-entity>
-       ================================================================= */
- 
     function buildARScene() {
-        log('🎬 buildARScene()');
         const container = document.getElementById('ar-container');
         container.style.display = 'block';
  
@@ -321,93 +252,52 @@
             device-orientation-permission-ui="enabled: false"
             embedded>
  
-            <!--
-            Assets: descomentar e colocar seus GLBs.
-            Veja seção "GLBs" abaixo no script pra como ativar.
-            -->
-            <a-assets timeout="5000">
-                <!-- <a-asset-item id="modelo-cuia"  src="./models/cuia.glb"></a-asset-item> -->
-                <!-- <a-asset-item id="modelo-cruz"  src="./models/cruz.glb"></a-asset-item> -->
-                <!-- <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item> -->
+            <a-assets timeout="10000">
+                <a-asset-item id="modelo-cuia"  src="./models/cuia.glb"></a-asset-item>
+                <a-asset-item id="modelo-cruz"  src="./models/cruz.glb"></a-asset-item>
+                <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
             </a-assets>
  
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
  
-            <!-- Iluminação -->
             <a-light type="ambient" color="#ffffff" intensity="0.8"></a-light>
             <a-light type="directional" color="#ffffff" intensity="0.6" position="1 1 1"></a-light>
  
             <!-- =========================================================
-                 TARGET 0: Cuia
-                 - Wrapper em (0, 0, 0): coordenadas do marker (canto sup. esq.)
-                 - Conteúdo posicionado em (0, 0, 0) já é o canto. Pra
-                   ficar 'em cima' do marker centralizado, usar Z positivo.
-                 - position="0 0 0.05" → 5cm acima do marker no centro
+                 TARGET 0: Cuia (GLB)
+                 Ajustes que você provavelmente vai querer fazer:
+                   position="X Y Z" → X horizontal, Y vertical no plano, Z altura
+                   rotation="X Y Z" → graus em cada eixo
+                   scale="X Y Z"    → tamanho (igual nos 3 mantém proporção)
                  ========================================================= -->
             <a-entity mindar-image-target="targetIndex: 0" id="target-cuia">
- 
-                <!-- Área de clique invisível — cobre todo o marker.
-                     É no plano que o raycaster mira pra disparar o clique. -->
-                <a-plane class="clickable" data-action="collect-cuia"
-                    position="0 0 0.01" width="1" height="1"
-                    material="opacity: 0.001; transparent: true"
-                    rotation="0 0 0"></a-plane>
- 
-                <!-- Conteúdo visual (primitiva). Para GLB, ver bloco abaixo. -->
-                <a-entity id="entity-cuia" position="0 0 0.05">
-                    <a-cylinder color="#5d3a1a" radius="0.15" height="0.1" position="0 0 0"></a-cylinder>
-                    <a-sphere color="#8b5e3c" radius="0.18" position="0 0 0.15"></a-sphere>
-                    <a-text value="CUIA" align="center" position="0 0 0.45"
-                            scale="0.6 0.6 0.6" color="#ffd700"
-                            rotation="0 0 0"></a-text>
-                </a-entity>
- 
-                <!-- VERSÃO COM GLB — descomentar e remover o bloco acima.
-                     Ajuste scale e rotation conforme seu modelo:
                 <a-entity id="entity-cuia"
                           gltf-model="#modelo-cuia"
                           position="0 0 0.05"
                           rotation="-90 0 0"
                           scale="0.3 0.3 0.3"></a-entity>
-                -->
             </a-entity>
  
-            <!-- TARGET 1: Cruz -->
+            <!-- TARGET 1: Cruz (GLB) -->
             <a-entity mindar-image-target="targetIndex: 1" id="target-cruz">
-                <a-plane class="clickable" data-action="collect-cruz"
-                    position="0 0 0.01" width="1" height="1"
-                    material="opacity: 0.001; transparent: true"></a-plane>
- 
-                <a-entity id="entity-cruz" position="0 0 0.05">
-                    <a-box color="#ffd700" width="0.06" height="0.5" depth="0.06" position="0 0 0"></a-box>
-                    <a-box color="#ffd700" width="0.34" height="0.06" depth="0.06" position="0 0 0.15"></a-box>
-                    <a-box color="#ffd700" width="0.22" height="0.06" depth="0.06" position="0 0 0.05"></a-box>
-                    <a-light type="point" color="orange" intensity="1.5" position="0 0 0.3"></a-light>
-                    <a-text value="CRUZ" align="center" position="0 0 0.4"
-                            scale="0.6 0.6 0.6" color="#ffd700"></a-text>
-                </a-entity>
+                <a-entity id="entity-cruz"
+                          gltf-model="#modelo-cruz"
+                          position="0 0 0.05"
+                          rotation="-90 0 0"
+                          scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
  
-            <!-- TARGET 2: Lança -->
+            <!-- TARGET 2: Lança (GLB) -->
             <a-entity mindar-image-target="targetIndex: 2" id="target-lanca">
-                <a-plane class="clickable" data-action="collect-lanca"
-                    position="0 0 0.01" width="1" height="1"
-                    material="opacity: 0.001; transparent: true"></a-plane>
- 
-                <a-entity id="entity-lanca" position="0 0 0.05">
-                    <a-cylinder color="#5d4037" radius="0.04" height="0.7" position="0 0 0"></a-cylinder>
-                    <a-cone color="#90a4ae" radius-bottom="0.09" height="0.2" position="0 0 0.45"></a-cone>
-                    <a-text value="LANÇA" align="center" position="0 0 0.7"
-                            scale="0.6 0.6 0.6" color="#ffd700"></a-text>
-                </a-entity>
+                <a-entity id="entity-lanca"
+                          gltf-model="#modelo-lanca"
+                          position="0 0 0.05"
+                          rotation="-90 0 0"
+                          scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
  
             <!-- TARGET 3: Portal 1 -->
             <a-entity mindar-image-target="targetIndex: 3" id="target-portal1">
-                <a-plane class="clickable" data-action="portal-1"
-                    position="0 0 0.01" width="1" height="1"
-                    material="opacity: 0.001; transparent: true"></a-plane>
- 
                 <a-entity id="portal-1" position="0 0 0.05">
                     <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
                         <a-plane id="content-1" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
@@ -420,10 +310,6 @@
  
             <!-- TARGET 4: Portal 2 -->
             <a-entity mindar-image-target="targetIndex: 4" id="target-portal2">
-                <a-plane class="clickable" data-action="portal-2"
-                    position="0 0 0.01" width="1" height="1"
-                    material="opacity: 0.001; transparent: true"></a-plane>
- 
                 <a-entity id="portal-2" position="0 0 0.05">
                     <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
                         <a-plane id="content-2" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
@@ -436,10 +322,6 @@
  
             <!-- TARGET 5: Portal 3 -->
             <a-entity mindar-image-target="targetIndex: 5" id="target-portal3">
-                <a-plane class="clickable" data-action="portal-3"
-                    position="0 0 0.01" width="1" height="1"
-                    material="opacity: 0.001; transparent: true"></a-plane>
- 
                 <a-entity id="portal-3" position="0 0 0.05">
                     <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
                         <a-plane id="content-3" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
@@ -454,39 +336,26 @@
         const scene = container.querySelector('a-scene');
  
         scene.addEventListener('loaded', () => {
-            log('✓ scene loaded');
             setupTargetEvents();
- 
             const arSystem = scene.systems['mindar-image-system'];
-            if (!arSystem) { log('❌ sistema MindAR não existe'); return; }
- 
-            arSystem.start()
-                .then(() => log('✓ MindAR iniciado'))
-                .catch(err => {
-                    document.body.classList.add('show-debug');
-                    log('❌ MindAR falhou: ' + (err.message || err));
-                    document.getElementById('sim-panel').style.display = 'flex';
-                });
+            if (!arSystem) return;
+            arSystem.start().catch(err => {
+                alert('Erro ao iniciar AR: ' + (err.message || err));
+                document.getElementById('sim-panel').style.display = 'flex';
+            });
         });
     }
  
-    /* =================================================================
-       EVENTOS DE TARGET → mostra/esconde botão de TAP correspondente
-       ================================================================= */
     function setupTargetEvents() {
         TARGET_MAP.forEach((key, idx) => {
             const targetEl = document.querySelector(`[mindar-image-target="targetIndex: ${idx}"]`);
             if (!targetEl) return;
- 
             const tapBtn = document.getElementById('tap-' + key);
  
             targetEl.addEventListener('targetFound', () => {
-                log('🎯 targetFound: ' + key);
                 if (tapBtn && !isCompleted(key)) tapBtn.classList.add('visible');
             });
- 
             targetEl.addEventListener('targetLost', () => {
-                log('   targetLost: ' + key);
                 if (tapBtn) tapBtn.classList.remove('visible');
             });
         });
@@ -498,9 +367,6 @@
         return false;
     }
  
-    /* =================================================================
-       LÓGICA DO JOGO
-       ================================================================= */
     function collect(item) {
         if (state.inventory[item]) { notify(`Você já tem a ${item}.`); return; }
         state.inventory[item] = true;
