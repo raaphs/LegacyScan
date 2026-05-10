@@ -331,24 +331,7 @@
             cursor="rayOrigin: mouse"
             raycaster="objects: .clickable">
 
-            <a-assets timeout="15000">
-                <!-- Modelos 3D das chaves -->
-                <a-asset-item id="modelo-cuia"  src="./models/cuia.glb"></a-asset-item>
-                <a-asset-item id="modelo-cruz"  src="./models/cruz.glb"></a-asset-item>
-                <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
-
-                <!-- Imagens dos portais (B&P e coloridas).
-                     SUBSTITUA pelas suas imagens reais nas pastas corretas.
-                     Por enquanto uso placeholders SVG inline pra demo funcionar. -->
-                <img id="img-pintura-bw"    crossorigin="anonymous" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCBmaWxsPSIjMjIyIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjxnIHN0cm9rZT0iI2JiYiIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIzIj48cGF0aCBkPSJNMjAgMTAwTDEwMCAyMEwxODAgMTAwTDEwMCAxODBaIi8+PHBhdGggZD0iTTYwIDEwMEwxMDAgNjBMMTQwIDEwMEwxMDAgMTQwWiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMTUiLz48L2c+PHRleHQgeD0iMTAwIiB5PSIxOTUiIGZpbGw9IiM2NjYiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlBJTlRVUkEgR1VBUkFOSSAoQiZhbXA7UCk8L3RleHQ+PC9zdmc+">
-                <img id="img-pintura-color" crossorigin="anonymous" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCBmaWxsPSIjOGIyNTBlIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjxnIHN0cm9rZT0iI2ZmZDg2YiIgZmlsbD0iI2ZmYzEzMyIgc3Ryb2tlLXdpZHRoPSIzIj48cGF0aCBkPSJNMjAgMTAwTDEwMCAyMEwxODAgMTAwTDEwMCAxODBaIi8+PHBhdGggZD0iTTYwIDEwMEwxMDAgNjBMMTQwIDEwMEwxMDAgMTQwWiIgZmlsbD0iIzNkMmIxZiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iMTUiIGZpbGw9IiNkODQzMTUiLz48L2c+PHRleHQgeD0iMTAwIiB5PSIxOTUiIGZpbGw9IiNmZmQ4NmIiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlBJTlRVUkEgR1VBUkFOSTwvdGV4dD48L3N2Zz4=">
-
-                <img id="img-sino-bw"    crossorigin="anonymous" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCBmaWxsPSIjMjIyIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjxwYXRoIGQ9Ik04MCA0MCBMMTIwIDQwIEwxMzAgMTQwIEw3MCAxNDBaIiBmaWxsPSIjNTU1IiBzdHJva2U9IiNiYmIiIHN0cm9rZS13aWR0aD0iMyIvPjxyZWN0IHg9Ijk1IiB5PSIzMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjE1IiBmaWxsPSIjOTk5Ii8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTYwIiByPSI4IiBmaWxsPSIjNzc3Ii8+PHRleHQgeD0iMTAwIiB5PSIxOTUiIGZpbGw9IiM2NjYiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlNJTk8gKEImYW1wO1ApPC90ZXh0Pjwvc3ZnPg==">
-                <img id="img-sino-color" crossorigin="anonymous" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCBmaWxsPSIjMmExODEwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjxwYXRoIGQ9Ik04MCA0MCBMMTIwIDQwIEwxMzAgMTQwIEw3MCAxNDBaIiBmaWxsPSIjY2Q3ZjMyIiBzdHJva2U9IiNmZmQ4NmIiIHN0cm9rZS13aWR0aD0iMyIvPjxyZWN0IHg9Ijk1IiB5PSIzMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjE1IiBmaWxsPSIjYjg4ODFmIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTYwIiByPSI4IiBmaWxsPSIjOGI0NTEzIi8+PHRleHQgeD0iMTAwIiB5PSIxOTUiIGZpbGw9IiNmZmQ4NmIiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlNJTk8gTUlTU0lPTkVJUk88L3RleHQ+PC9zdmc+">
-
-                <img id="img-erval-bw"    crossorigin="anonymous" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCBmaWxsPSIjMjIyIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2JiYiIgc3Ryb2tlLXdpZHRoPSIyIj48cGF0aCBkPSJNMTAwIDE4MEwxMDAgNjAiLz48cGF0aCBkPSJNMTAwIDEzMCBRNzAgMTEwIDUwIDEzMCIvPjxwYXRoIGQ9Ik0xMDAgMTEwIFExMzAgOTAgMTUwIDExMCIvPjxwYXRoIGQ9Ik0xMDAgOTAgUTcwIDcwIDUwIDkwIi8+PHBhdGggZD0iTTEwMCA3MCBRMTMwIDUwIDE1MCA3MCIvPjwvZz48dGV4dCB4PSIxMDAiIHk9IjE5NSIgZmlsbD0iIzY2NiIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RVJWQUlTIChCJmFtcDtQKTwvdGV4dD48L3N2Zz4=">
-                <img id="img-erval-color" crossorigin="anonymous" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCBmaWxsPSIjMWEyZTFhIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIvPjxnIGZpbGw9IiMyZTdkMzIiIHN0cm9rZT0iIzhjY2Y4ZSIgc3Ryb2tlLXdpZHRoPSIyIj48cGF0aCBkPSJNMTAwIDE4MEwxMDAgNjAiIHN0cm9rZT0iIzU0NDgyOSIgc3Ryb2tlLXdpZHRoPSIzIi8+PGVsbGlwc2UgY3g9IjcwIiBjeT0iMTI1IiByeD0iMjUiIHJ5PSI4IiB0cmFuc2Zvcm09InJvdGF0ZSgyMCA3MCAxMjUpIi8+PGVsbGlwc2UgY3g9IjEzMCIgY3k9IjEwNSIgcng9IjI1IiByeT0iOCIgdHJhbnNmb3JtPSJyb3RhdGUoLTIwIDEzMCAxMDUpIi8+PGVsbGlwc2UgY3g9IjcwIiBjeT0iODUiIHJ4PSIyNSIgcnk9IjgiIHRyYW5zZm9ybT0icm90YXRlKDIwIDcwIDg1KSIvPjxlbGxpcHNlIGN4PSIxMzAiIGN5PSI3MCIgcng9IjIwIiByeT0iNyIgdHJhbnNmb3JtPSJyb3RhdGUoLTIwIDEzMCA3MCkiLz48L2c+PHRleHQgeD0iMTAwIiB5PSIxOTUiIGZpbGw9IiNmZmQ4NmIiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkVSVkFJUyBTQUdSQURPUzwvdGV4dD48L3N2Zz4=">
-            </a-assets>
+           
 
             <!-- ============================================
                  CHAVES SAGRADAS (3 marcadores distintos)
