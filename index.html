@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Legacy Scan: O Portal dos Sete Povos</title>
-
+ 
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- A-Frame + MindAR (substitui AR.js NFT) -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
+ 
     <style>
         html, body {
             margin: 0; padding: 0;
@@ -19,9 +17,9 @@
             background: #000;
             font-family: sans-serif;
         }
-
+ 
         #ar-container { position: fixed; inset: 0; z-index: 1; display: none; }
-
+ 
         #ui-layer {
             position: fixed; inset: 0;
             z-index: 100;
@@ -29,7 +27,7 @@
             display: flex; flex-direction: column;
         }
         .interactive { pointer-events: auto; }
-
+ 
         #landing-page {
             position: fixed; inset: 0;
             background: linear-gradient(rgba(0,0,0,0.85), rgba(61,43,31,0.95)),
@@ -39,7 +37,7 @@
             align-items: center; justify-content: center;
             text-align: center; color: white; padding: 2rem;
         }
-
+ 
         .inventory-slot {
             width: 58px; height: 58px;
             background: rgba(0,0,0,0.75);
@@ -56,7 +54,7 @@
             box-shadow: 0 0 18px #ffd700;
             transform: scale(1.12);
         }
-
+ 
         #msg-popup {
             background: rgba(30, 15, 5, 0.92);
             color: #ffd700;
@@ -73,12 +71,42 @@
             font-size: 14px;
         }
         #msg-popup.visible { opacity: 1; transform: translateY(0); }
-
-        #sim-panel {
+ 
+        /* Botões grandes de TAP — alternativa garantida ao clique 3D em mobile */
+        #tap-buttons {
             position: fixed;
             bottom: 24px; left: 50%;
             transform: translateX(-50%);
             z-index: 150;
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+        .tap-btn {
+            background: rgba(0,0,0,0.85);
+            color: #ffd700;
+            border: 2px solid #8b4513;
+            border-radius: 50%;
+            width: 70px; height: 70px;
+            font-size: 28px;
+            cursor: pointer;
+            display: none;
+            align-items: center; justify-content: center;
+            transition: all 0.3s;
+            animation: pulse 1.5s infinite;
+        }
+        .tap-btn.visible { display: flex; }
+        .tap-btn:active { transform: scale(0.92); background: #8b4513; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0.6); }
+            50% { box-shadow: 0 0 0 16px rgba(255,215,0,0); }
+        }
+ 
+        #sim-panel {
+            position: fixed;
+            bottom: 24px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 149;
             background: rgba(0,0,0,0.85);
             border: 2px solid #555;
             border-radius: 16px;
@@ -99,11 +127,10 @@
             border-radius: 8px; padding: 7px 14px;
             font-size: 13px; cursor: pointer;
         }
-        .sim-btn:active { background: rgba(255,255,255,0.2); }
         .sim-btn.collected { border-color: #ffd700; color: #ffd700; }
         .sim-btn.portal-btn { border-color: #88f; color: #aaf; }
         .sim-btn.portal-btn.unlocked { border-color: #5f5; color: #8f8; }
-
+ 
         #win-screen {
             display: none;
             position: fixed; inset: 0;
@@ -113,7 +140,7 @@
             align-items: center; justify-content: center;
             text-align: center; padding: 2rem; color: white;
         }
-
+ 
         #debug-log {
             position: fixed;
             top: 4px; left: 4px; right: 4px;
@@ -131,29 +158,29 @@
             word-break: break-word;
         }
         body.show-debug #debug-log { display: block; }
-
+ 
         .a-enter-vr, .a-enter-ar, .a-enter-vr-button { display: none !important; }
         .mindar-ui-overlay { display: none !important; }
     </style>
 </head>
 <body>
-
+ 
 <div id="debug-log"></div>
 <div id="ar-container"></div>
-
+ 
 <div id="ui-layer">
-
+ 
     <div id="landing-page">
         <h1 class="text-4xl font-serif font-bold text-yellow-500 mb-2 tracking-tighter uppercase">Legacy Scan</h1>
         <h2 class="text-lg italic text-yellow-100 mb-8 opacity-80">O Portal dos Sete Povos</h2>
         <p class="max-w-xs mb-6 text-sm leading-relaxed">
             As Missões perderam a sua cor. Escaneie as imagens sagradas, colete as chaves e ative os portais para restaurar a memória dos Sete Povos.
         </p>
-
+ 
         <div class="bg-yellow-900/50 border border-yellow-600 rounded-xl p-3 max-w-xs mb-8 text-xs text-yellow-200">
-            ⚠️ Permita acesso à câmera quando solicitado. Aponte para as imagens-marcador impressas.
+            ⚠️ Aponte para a imagem e toque no botão dourado para coletar a chave.
         </div>
-
+ 
         <button onclick="startApp()" class="interactive bg-yellow-700 hover:bg-yellow-600 px-10 py-4 rounded-full font-bold text-lg border-2 border-yellow-500 shadow-2xl transition-all active:scale-95 text-yellow-100 uppercase tracking-widest mb-4">
             Iniciar Missão
         </button>
@@ -161,7 +188,7 @@
             Modo simulação (sem câmera)
         </button>
     </div>
-
+ 
     <div id="game-hud" class="hidden w-full pt-6 flex flex-col items-center">
         <div class="flex gap-4">
             <div id="slot-cuia" class="inventory-slot" title="Cuia">🧉</div>
@@ -170,7 +197,7 @@
         </div>
         <div id="msg-popup">Aponte a câmera para uma imagem marcador...</div>
     </div>
-
+ 
     <div id="win-screen">
         <h2 class="text-3xl font-bold text-yellow-500 mb-4 uppercase">Legado Restaurado!</h2>
         <p class="text-gray-300 mb-8 text-sm max-w-xs">A união da tecnologia e cultura salvou a memória missioneira.</p>
@@ -181,79 +208,70 @@
         <button onclick="location.reload()" class="interactive bg-white text-black px-8 py-3 rounded-full font-bold uppercase text-sm">Recomeçar</button>
     </div>
 </div>
-
+ 
+<!-- BOTÕES DE TAP — aparecem quando marker está visível -->
+<div id="tap-buttons">
+    <button id="tap-cuia"  class="tap-btn" title="Coletar Cuia"  onclick="collect('cuia')">🧉</button>
+    <button id="tap-cruz"  class="tap-btn" title="Coletar Cruz"  onclick="collect('cruz')">✝️</button>
+    <button id="tap-lanca" class="tap-btn" title="Coletar Lança" onclick="collect('lanca')">🔱</button>
+    <button id="tap-p1"    class="tap-btn" title="Ativar Portal 1" onclick="activatePortal(1,'lanca')">1️⃣</button>
+    <button id="tap-p2"    class="tap-btn" title="Ativar Portal 2" onclick="activatePortal(2,'cruz')">2️⃣</button>
+    <button id="tap-p3"    class="tap-btn" title="Ativar Portal 3" onclick="activatePortal(3,'cuia')">3️⃣</button>
+</div>
+ 
 <div id="sim-panel">
     <p><strong>Modo Simulação</strong> — câmera não disponível</p>
-    <p>Simule escanear as imagens:</p>
     <div class="sim-row">
-        <button id="sbtn-cuia" class="sim-btn" onclick="collect('cuia')">🧉 Escanear Cuia</button>
-        <button id="sbtn-cruz" class="sim-btn" onclick="collect('cruz')">✝️ Escanear Cruz</button>
-        <button id="sbtn-lanca" class="sim-btn" onclick="collect('lanca')">🔱 Escanear Lança</button>
+        <button id="sbtn-cuia"  class="sim-btn" onclick="collect('cuia')">🧉 Cuia</button>
+        <button id="sbtn-cruz"  class="sim-btn" onclick="collect('cruz')">✝️ Cruz</button>
+        <button id="sbtn-lanca" class="sim-btn" onclick="collect('lanca')">🔱 Lança</button>
     </div>
-    <p style="margin-top:6px">Ativar portais:</p>
     <div class="sim-row">
-        <button id="pbtn-1" class="sim-btn portal-btn" onclick="activatePortal(1,'lanca')">Portal 1 (Lança)</button>
-        <button id="pbtn-2" class="sim-btn portal-btn" onclick="activatePortal(2,'cruz')">Portal 2 (Cruz)</button>
-        <button id="pbtn-3" class="sim-btn portal-btn" onclick="activatePortal(3,'cuia')">Portal 3 (Cuia)</button>
+        <button id="pbtn-1" class="sim-btn portal-btn" onclick="activatePortal(1,'lanca')">Portal 1</button>
+        <button id="pbtn-2" class="sim-btn portal-btn" onclick="activatePortal(2,'cruz')">Portal 2</button>
+        <button id="pbtn-3" class="sim-btn portal-btn" onclick="activatePortal(3,'cuia')">Portal 3</button>
     </div>
 </div>
-
+ 
 <script>
     /* =================================================================
-       LOG VISÍVEL — abre com ?debug=1 no URL ou em qualquer erro
+       LOG VISÍVEL
        ================================================================= */
     const dbg = document.getElementById('debug-log');
     function log(msg) {
-        const time = new Date().toTimeString().slice(0,8);
-        const line = `[${time}] ${msg}`;
+        const t = new Date().toTimeString().slice(0,8);
+        const line = `[${t}] ${msg}`;
         console.log(line);
         if (dbg) dbg.textContent = (dbg.textContent + '\n' + line).slice(-2000);
     }
-
     if (location.search.includes('debug=1')) document.body.classList.add('show-debug');
-
-    window.addEventListener('error', e => {
-        document.body.classList.add('show-debug');
-        log('❌ ERRO: ' + e.message);
-    });
-    window.addEventListener('unhandledrejection', e => {
-        document.body.classList.add('show-debug');
-        log('❌ PROMISE: ' + (e.reason && e.reason.message || e.reason));
-    });
-
-    log('Página carregada');
-    log('A-Frame: ' + (window.AFRAME ? '✓ v' + AFRAME.version : '✗'));
-    log('MindAR: ' + (window.MINDAR ? '✓' : '✗'));
-
+    window.addEventListener('error', e => { document.body.classList.add('show-debug'); log('❌ ' + e.message); });
+ 
     /* =================================================================
        ESTADO
        ================================================================= */
     const state = {
         inventory: { cuia: false, cruz: false, lanca: false },
         portals:   { p1: false, p2: false, p3: false },
-        markersVisible: { cuia: false, cruz: false, lanca: false, p1: false, p2: false, p3: false },
         simMode: false
     };
-
-    /* Mapeamento targetIndex → chave do jogo. Tem que bater com a
-       ORDEM em que você subiu as imagens no compilador do MindAR. */
+ 
     const TARGET_MAP = ['cuia', 'cruz', 'lanca', 'p1', 'p2', 'p3'];
-
+ 
     /* =================================================================
-       INICIAR
+       INÍCIO
        ================================================================= */
     function startApp() {
         log('🚀 startApp()');
-
         if (!window.AFRAME) { alert('A-Frame não carregou.'); return; }
-
+ 
         document.getElementById('landing-page').style.display = 'none';
         document.getElementById('game-hud').classList.remove('hidden');
-
+ 
         notify('Iniciando AR...');
         setTimeout(buildARScene, 100);
     }
-
+ 
     function startSimMode() {
         state.simMode = true;
         document.getElementById('landing-page').style.display = 'none';
@@ -262,24 +280,38 @@
         document.body.style.background = '#1a1a1a';
         notify('Modo simulação ativo.');
     }
-
+ 
     /* =================================================================
-       MONTAGEM DA CENA — sintaxe MindAR
+       CENA MindAR
+       =================================================================
+ 
+       SISTEMA DE COORDENADAS DO MindAR — IMPORTANTE
+       ----------------------------------------------
+       O marker é tratado como um plano de tamanho 1 unidade na horizontal.
+       A altura depende do aspect ratio da sua imagem (ex: imagem 4:3 → altura ~0.75).
+ 
+       Origem (0,0,0) = CANTO SUPERIOR ESQUERDO
+       X cresce pra direita (0 a 1)
+       Y cresce pra BAIXO (eixo invertido, então valores negativos sobem)
+       Z sai do marker em direção à câmera (positivo)
+ 
+       Portanto:
+       - Pra centralizar no marker: position="0.5 -0.5 0" (assumindo aspect quadrado)
+       - Pra ficar EM CIMA do marker: Z positivo (ex: 0.1)
+       - Pra ficar flutuando acima: Z maior
+ 
+       Como a altura do marker depende do aspect ratio, a forma mais segura
+       de centralizar é usar uma estrutura aninhada:
+       <a-entity position="0.5 -0.5 0">  ← ponto central aproximado
+           <a-entity ...modelo aqui...>   ← coordenadas relativas ao centro
+       </a-entity>
        ================================================================= */
+ 
     function buildARScene() {
         log('🎬 buildARScene()');
         const container = document.getElementById('ar-container');
         container.style.display = 'block';
-
-        /*
-        DIFERENÇAS CHAVE vs AR.js NFT:
-        - <a-scene mindar-image="..."> em vez de arjs="..."
-        - imageTargetSrc aponta pra UM .mind que contém TODOS os markers
-        - Cada marker é <a-entity mindar-image-target="targetIndex: N">
-        - Eventos são targetFound/targetLost (não markerFound/markerLost)
-        - autoStart: false → controlamos o início manualmente
-        */
-
+ 
         container.innerHTML = `
         <a-scene
             mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
@@ -287,49 +319,97 @@
             renderer="colorManagement: true, physicallyCorrectLights"
             vr-mode-ui="enabled: false"
             device-orientation-permission-ui="enabled: false"
-            embedded
-            cursor="rayOrigin: mouse"
-            raycaster="objects: .clickable">
-
+            embedded>
+ 
+            <!--
+            Assets: descomentar e colocar seus GLBs.
+            Veja seção "GLBs" abaixo no script pra como ativar.
+            -->
+            <a-assets timeout="5000">
+                <!-- <a-asset-item id="modelo-cuia"  src="./models/cuia.glb"></a-asset-item> -->
+                <!-- <a-asset-item id="modelo-cruz"  src="./models/cruz.glb"></a-asset-item> -->
+                <!-- <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item> -->
+            </a-assets>
+ 
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-            <!-- Iluminação base -->
+ 
+            <!-- Iluminação -->
             <a-light type="ambient" color="#ffffff" intensity="0.8"></a-light>
             <a-light type="directional" color="#ffffff" intensity="0.6" position="1 1 1"></a-light>
-
-            <!-- TARGET 0: Cuia -->
+ 
+            <!-- =========================================================
+                 TARGET 0: Cuia
+                 - Wrapper em (0, 0, 0): coordenadas do marker (canto sup. esq.)
+                 - Conteúdo posicionado em (0, 0, 0) já é o canto. Pra
+                   ficar 'em cima' do marker centralizado, usar Z positivo.
+                 - position="0 0 0.05" → 5cm acima do marker no centro
+                 ========================================================= -->
             <a-entity mindar-image-target="targetIndex: 0" id="target-cuia">
-                <a-entity id="entity-cuia">
-                    <a-cylinder color="#5d3a1a" radius="0.15" height="0.1" position="0 -0.1 0"></a-cylinder>
-                    <a-sphere color="#8b5e3c" radius="0.18" position="0 0.05 0"></a-sphere>
-                    <a-text value="CUIA\nToque!" align="center" position="0 0.45 0" scale="0.5 0.5 0.5" color="#ffd700"></a-text>
+ 
+                <!-- Área de clique invisível — cobre todo o marker.
+                     É no plano que o raycaster mira pra disparar o clique. -->
+                <a-plane class="clickable" data-action="collect-cuia"
+                    position="0 0 0.01" width="1" height="1"
+                    material="opacity: 0.001; transparent: true"
+                    rotation="0 0 0"></a-plane>
+ 
+                <!-- Conteúdo visual (primitiva). Para GLB, ver bloco abaixo. -->
+                <a-entity id="entity-cuia" position="0 0 0.05">
+                    <a-cylinder color="#5d3a1a" radius="0.15" height="0.1" position="0 0 0"></a-cylinder>
+                    <a-sphere color="#8b5e3c" radius="0.18" position="0 0 0.15"></a-sphere>
+                    <a-text value="CUIA" align="center" position="0 0 0.45"
+                            scale="0.6 0.6 0.6" color="#ffd700"
+                            rotation="0 0 0"></a-text>
                 </a-entity>
+ 
+                <!-- VERSÃO COM GLB — descomentar e remover o bloco acima.
+                     Ajuste scale e rotation conforme seu modelo:
+                <a-entity id="entity-cuia"
+                          gltf-model="#modelo-cuia"
+                          position="0 0 0.05"
+                          rotation="-90 0 0"
+                          scale="0.3 0.3 0.3"></a-entity>
+                -->
             </a-entity>
-
+ 
             <!-- TARGET 1: Cruz -->
             <a-entity mindar-image-target="targetIndex: 1" id="target-cruz">
-                <a-entity id="entity-cruz">
-                    <a-box color="#ffd700" width="0.06" height="0.5" depth="0.06" position="0 0.15 0"></a-box>
-                    <a-box color="#ffd700" width="0.34" height="0.06" depth="0.06" position="0 0.3 0"></a-box>
-                    <a-box color="#ffd700" width="0.22" height="0.06" depth="0.06" position="0 0.2 0"></a-box>
-                    <a-light type="point" color="orange" intensity="1.5" position="0 0.25 0.2"></a-light>
-                    <a-text value="CRUZ\nToque!" align="center" position="0 0.65 0" scale="0.5 0.5 0.5" color="#ffd700"></a-text>
+                <a-plane class="clickable" data-action="collect-cruz"
+                    position="0 0 0.01" width="1" height="1"
+                    material="opacity: 0.001; transparent: true"></a-plane>
+ 
+                <a-entity id="entity-cruz" position="0 0 0.05">
+                    <a-box color="#ffd700" width="0.06" height="0.5" depth="0.06" position="0 0 0"></a-box>
+                    <a-box color="#ffd700" width="0.34" height="0.06" depth="0.06" position="0 0 0.15"></a-box>
+                    <a-box color="#ffd700" width="0.22" height="0.06" depth="0.06" position="0 0 0.05"></a-box>
+                    <a-light type="point" color="orange" intensity="1.5" position="0 0 0.3"></a-light>
+                    <a-text value="CRUZ" align="center" position="0 0 0.4"
+                            scale="0.6 0.6 0.6" color="#ffd700"></a-text>
                 </a-entity>
             </a-entity>
-
+ 
             <!-- TARGET 2: Lança -->
             <a-entity mindar-image-target="targetIndex: 2" id="target-lanca">
-                <a-entity id="entity-lanca">
-                    <a-cylinder color="#5d4037" radius="0.04" height="0.7" position="0 0.15 0"></a-cylinder>
-                    <a-cone color="#90a4ae" radius-bottom="0.09" height="0.2" position="0 0.6 0"></a-cone>
-                    <a-text value="LANÇA\nToque!" align="center" position="0 0.85 0" scale="0.5 0.5 0.5" color="#ffd700"></a-text>
+                <a-plane class="clickable" data-action="collect-lanca"
+                    position="0 0 0.01" width="1" height="1"
+                    material="opacity: 0.001; transparent: true"></a-plane>
+ 
+                <a-entity id="entity-lanca" position="0 0 0.05">
+                    <a-cylinder color="#5d4037" radius="0.04" height="0.7" position="0 0 0"></a-cylinder>
+                    <a-cone color="#90a4ae" radius-bottom="0.09" height="0.2" position="0 0 0.45"></a-cone>
+                    <a-text value="LANÇA" align="center" position="0 0 0.7"
+                            scale="0.6 0.6 0.6" color="#ffd700"></a-text>
                 </a-entity>
             </a-entity>
-
+ 
             <!-- TARGET 3: Portal 1 -->
             <a-entity mindar-image-target="targetIndex: 3" id="target-portal1">
-                <a-entity id="portal-1">
-                    <a-box position="0 0.3 0" width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9">
+                <a-plane class="clickable" data-action="portal-1"
+                    position="0 0 0.01" width="1" height="1"
+                    material="opacity: 0.001; transparent: true"></a-plane>
+ 
+                <a-entity id="portal-1" position="0 0 0.05">
+                    <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
                         <a-plane id="content-1" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
                             <a-text value="GRAFISMO\nGUARANI\nRESTAURADO" align="center" color="#d84315" width="1.5" position="0 0 0.01"></a-text>
                         </a-plane>
@@ -337,11 +417,15 @@
                     </a-box>
                 </a-entity>
             </a-entity>
-
+ 
             <!-- TARGET 4: Portal 2 -->
             <a-entity mindar-image-target="targetIndex: 4" id="target-portal2">
-                <a-entity id="portal-2">
-                    <a-box position="0 0.3 0" width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9">
+                <a-plane class="clickable" data-action="portal-2"
+                    position="0 0 0.01" width="1" height="1"
+                    material="opacity: 0.001; transparent: true"></a-plane>
+ 
+                <a-entity id="portal-2" position="0 0 0.05">
+                    <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
                         <a-plane id="content-2" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
                             <a-text value="SINO\nMISSIONEIRO\nRESTAURADO" align="center" color="#ff8f00" width="1.5" position="0 0 0.01"></a-text>
                         </a-plane>
@@ -349,11 +433,15 @@
                     </a-box>
                 </a-entity>
             </a-entity>
-
+ 
             <!-- TARGET 5: Portal 3 -->
             <a-entity mindar-image-target="targetIndex: 5" id="target-portal3">
-                <a-entity id="portal-3">
-                    <a-box position="0 0.3 0" width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9">
+                <a-plane class="clickable" data-action="portal-3"
+                    position="0 0 0.01" width="1" height="1"
+                    material="opacity: 0.001; transparent: true"></a-plane>
+ 
+                <a-entity id="portal-3" position="0 0 0.05">
+                    <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
                         <a-plane id="content-3" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
                             <a-text value="ERVAIS\nSAGRADOS\nRESTAURADOS" align="center" color="#2e7d32" width="1.5" position="0 0 0.01"></a-text>
                         </a-plane>
@@ -362,103 +450,97 @@
                 </a-entity>
             </a-entity>
         </a-scene>`;
-
+ 
         const scene = container.querySelector('a-scene');
-
+ 
         scene.addEventListener('loaded', () => {
             log('✓ scene loaded');
             setupTargetEvents();
-            setupInteractions();
-
-            /* MindAR precisa de start() manual com autoStart: false.
-               A vantagem é que aí controlamos quando a câmera abre. */
+ 
             const arSystem = scene.systems['mindar-image-system'];
-            if (!arSystem) { log('❌ mindar-image-system não existe'); return; }
-
+            if (!arSystem) { log('❌ sistema MindAR não existe'); return; }
+ 
             arSystem.start()
                 .then(() => log('✓ MindAR iniciado'))
                 .catch(err => {
                     document.body.classList.add('show-debug');
                     log('❌ MindAR falhou: ' + (err.message || err));
-
-                    if (String(err).toLowerCase().includes('mind')) {
-                        alert('Arquivo targets.mind não foi encontrado em ./assets/targets.mind\n\nGere o arquivo no compilador do MindAR e suba pro repositório.');
-                    } else {
-                        alert('Erro ao iniciar AR: ' + (err.message || err));
-                    }
                     document.getElementById('sim-panel').style.display = 'flex';
                 });
         });
-
-        scene.addEventListener('arReady', () => log('✓ arReady (câmera + targets prontos)'));
-        scene.addEventListener('arError', e => {
-            document.body.classList.add('show-debug');
-            log('❌ arError: ' + JSON.stringify(e.detail || {}));
-        });
     }
-
+ 
     /* =================================================================
-       EVENTOS DE TARGET — quando MindAR detecta/perde uma imagem
+       EVENTOS DE TARGET → mostra/esconde botão de TAP correspondente
        ================================================================= */
     function setupTargetEvents() {
         TARGET_MAP.forEach((key, idx) => {
             const targetEl = document.querySelector(`[mindar-image-target="targetIndex: ${idx}"]`);
-            if (!targetEl) { log('⚠️ target ' + idx + ' não encontrado'); return; }
-
-            /* Pega o filho — é nele que a gente liga clique */
-            const inner = targetEl.querySelector('[id^="entity-"], [id^="portal-"]');
-
+            if (!targetEl) return;
+ 
+            const tapBtn = document.getElementById('tap-' + key);
+ 
             targetEl.addEventListener('targetFound', () => {
-                log('🎯 targetFound: ' + key + ' (idx ' + idx + ')');
-                state.markersVisible[key] = true;
-                if (inner) inner.classList.add('clickable');
+                log('🎯 targetFound: ' + key);
+                if (tapBtn && !isCompleted(key)) tapBtn.classList.add('visible');
             });
-
+ 
             targetEl.addEventListener('targetLost', () => {
                 log('   targetLost: ' + key);
-                state.markersVisible[key] = false;
-                if (inner) inner.classList.remove('clickable');
+                if (tapBtn) tapBtn.classList.remove('visible');
             });
         });
     }
-
+ 
+    function isCompleted(key) {
+        if (['cuia','cruz','lanca'].includes(key)) return state.inventory[key];
+        if (['p1','p2','p3'].includes(key)) return state.portals[key];
+        return false;
+    }
+ 
     /* =================================================================
-       LÓGICA DO JOGO (igual ao original)
+       LÓGICA DO JOGO
        ================================================================= */
     function collect(item) {
         if (state.inventory[item]) { notify(`Você já tem a ${item}.`); return; }
         state.inventory[item] = true;
         document.getElementById(`slot-${item}`).classList.add('active');
-
+ 
         const entity = document.getElementById(`entity-${item}`);
-        if (entity) { entity.setAttribute('visible', 'false'); entity.classList.remove('clickable'); }
-
-        const btn = document.getElementById(`sbtn-${item}`);
-        if (btn) { btn.classList.add('collected'); btn.disabled = true; btn.style.opacity = '0.5'; }
-
+        if (entity) entity.setAttribute('visible', 'false');
+ 
+        const tapBtn = document.getElementById('tap-' + item);
+        if (tapBtn) tapBtn.classList.remove('visible');
+ 
+        const simBtn = document.getElementById(`sbtn-${item}`);
+        if (simBtn) { simBtn.classList.add('collected'); simBtn.disabled = true; simBtn.style.opacity = '0.5'; }
+ 
         notify(`✅ Chave ${item.toUpperCase()} coletada!`);
     }
-
+ 
     function activatePortal(num, requiredItem) {
         if (state.portals[`p${num}`]) { notify(`Portal ${num} já está ativo.`); return; }
-
+ 
         if (state.inventory[requiredItem]) {
             state.portals[`p${num}`] = true;
             const content = document.getElementById(`content-${num}`);
             const txt = document.getElementById(`txt-${num}`);
             if (content) content.setAttribute('visible', 'true');
             if (txt) txt.setAttribute('visible', 'false');
-
+ 
+            const tapBtn = document.getElementById('tap-p' + num);
+            if (tapBtn) tapBtn.classList.remove('visible');
+ 
             const pbtn = document.getElementById(`pbtn-${num}`);
             if (pbtn) { pbtn.classList.add('unlocked'); pbtn.disabled = true; pbtn.style.opacity = '0.5'; }
-
+ 
             notify(`🌟 Portal ${num} restaurado!`);
             checkWin();
         } else {
             notify(`🔒 Bloqueado! Colete a ${requiredItem.toUpperCase()} primeiro.`);
         }
     }
-
+ 
     function notify(text) {
         const el = document.getElementById('msg-popup');
         if (!el) return;
@@ -467,32 +549,18 @@
         clearTimeout(el._t);
         el._t = setTimeout(() => el.classList.remove('visible'), 3200);
     }
-
+ 
     function checkWin() {
         if (state.portals.p1 && state.portals.p2 && state.portals.p3) {
             setTimeout(() => {
                 document.getElementById('win-screen').style.display = 'flex';
                 document.getElementById('game-hud').classList.add('hidden');
                 document.getElementById('sim-panel').style.display = 'none';
+                document.getElementById('tap-buttons').style.display = 'none';
             }, 1200);
         }
     }
-
-    function setupInteractions() {
-        const bindClick = (id, fn) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            ['click', 'mousedown', 'touchstart'].forEach(ev => el.addEventListener(ev, fn));
-        };
-        bindClick('entity-cuia',  () => collect('cuia'));
-        bindClick('entity-cruz',  () => collect('cruz'));
-        bindClick('entity-lanca', () => collect('lanca'));
-        bindClick('portal-1',     () => activatePortal(1, 'lanca'));
-        bindClick('portal-2',     () => activatePortal(2, 'cruz'));
-        bindClick('portal-3',     () => activatePortal(3, 'cuia'));
-        notify('Aponte para os marcadores!');
-    }
 </script>
-
+ 
 </body>
 </html>
