@@ -233,7 +233,6 @@
             A união da tecnologia e cultura salvou a memória missioneira. Leve este wallpaper como sua conquista.
         </p>
  
-        <!-- Preview do wallpaper que será baixado -->
         <canvas id="wallpaper-preview" width="540" height="960"></canvas>
  
         <button onclick="downloadWallpaper()" class="win-btn-primary">📱 Baixar Wallpaper</button>
@@ -273,8 +272,6 @@
  
     const TARGET_MAP = ['cuia', 'cruz', 'lanca', 'p1', 'p2', 'p3'];
  
-    /* Canvas full-res do wallpaper (1080x1920). Mantido em memória pra
-       servir tanto pro preview quanto pro download. */
     let wallpaperCanvas = null;
  
     function startApp() {
@@ -307,10 +304,19 @@
             device-orientation-permission-ui="enabled: false"
             embedded>
  
-            <a-assets timeout="10000">
+            <a-assets timeout="15000">
+                <!-- Chaves coletáveis -->
                 <a-asset-item id="modelo-cuia"  src="./models/cuia.glb"></a-asset-item>
                 <a-asset-item id="modelo-cruz"  src="./models/cruz.glb"></a-asset-item>
                 <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
+ 
+                <!-- Portais: dois modelos cada (estado fechado + estado aberto) -->
+                <a-asset-item id="modelo-portal1-fechado" src="./models/portal1F.bin"></a-asset-item>
+                <a-asset-item id="modelo-portal1-aberto"  src="./models/portal1A.bin"></a-asset-item>
+                <a-asset-item id="modelo-portal2-fechado" src="./models/portal2F.bin"></a-asset-item>
+                <a-asset-item id="modelo-portal2-aberto"  src="./models/portal2A.bin"></a-asset-item>
+                <a-asset-item id="modelo-portal3-fechado" src="./models/portal3F.bin"></a-asset-item>
+                <a-asset-item id="modelo-portal3-aberto"  src="./models/portal3A.bin"></a-asset-item>
             </a-assets>
  
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -318,6 +324,7 @@
             <a-light type="ambient" color="#ffffff" intensity="0.8"></a-light>
             <a-light type="directional" color="#ffffff" intensity="0.6" position="1 1 1"></a-light>
  
+            <!-- Chaves coletáveis (3 primeiros targets) -->
             <a-entity mindar-image-target="targetIndex: 0" id="target-cuia">
                 <a-entity id="entity-cuia"
                           gltf-model="#modelo-cuia"
@@ -342,37 +349,59 @@
                           scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
  
+            <!-- =========================================================
+                 PORTAIS — dois modelos cada, alterna visibilidade
+                 - 'fechado' começa visible="true"
+                 - 'aberto'  começa visible="false"
+                 - Ao ativar, JS troca os dois
+                 ========================================================= -->
+ 
+            <!-- PORTAL 1 -->
             <a-entity mindar-image-target="targetIndex: 3" id="target-portal1">
-                <a-entity id="portal-1" position="0 0 0.05">
-                    <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
-                        <a-plane id="content-1" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
-                            <a-text value="GRAFISMO\nGUARANI\nRESTAURADO" align="center" color="#d84315" width="1.5" position="0 0 0.01"></a-text>
-                        </a-plane>
-                        <a-text id="txt-1" value="BLOQUEADO\nPrecisa: Lanca" align="center" position="0 0 0.03" color="#ff4444" width="1.5"></a-text>
-                    </a-box>
-                </a-entity>
+                <a-entity id="portal-1-fechado"
+                          gltf-model="#modelo-portal1-fechado"
+                          position="0 0 0.05"
+                          rotation="90 0 0"
+                          scale="0.3 0.3 0.3"
+                          visible="true"></a-entity>
+                <a-entity id="portal-1-aberto"
+                          gltf-model="#modelo-portal1-aberto"
+                          position="0 0 0.05"
+                          rotation="90 0 0"
+                          scale="0.3 0.3 0.3"
+                          visible="false"></a-entity>
             </a-entity>
  
+            <!-- PORTAL 2 -->
             <a-entity mindar-image-target="targetIndex: 4" id="target-portal2">
-                <a-entity id="portal-2" position="0 0 0.05">
-                    <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
-                        <a-plane id="content-2" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
-                            <a-text value="SINO\nMISSIONEIRO\nRESTAURADO" align="center" color="#ff8f00" width="1.5" position="0 0 0.01"></a-text>
-                        </a-plane>
-                        <a-text id="txt-2" value="BLOQUEADO\nPrecisa: Cruz" align="center" position="0 0 0.03" color="#ff4444" width="1.5"></a-text>
-                    </a-box>
-                </a-entity>
+                <a-entity id="portal-2-fechado"
+                          gltf-model="#modelo-portal2-fechado"
+                          position="0 0 0.05"
+                          rotation="90 0 0"
+                          scale="0.3 0.3 0.3"
+                          visible="true"></a-entity>
+                <a-entity id="portal-2-aberto"
+                          gltf-model="#modelo-portal2-aberto"
+                          position="0 0 0.05"
+                          rotation="90 0 0"
+                          scale="0.3 0.3 0.3"
+                          visible="false"></a-entity>
             </a-entity>
  
+            <!-- PORTAL 3 -->
             <a-entity mindar-image-target="targetIndex: 5" id="target-portal3">
-                <a-entity id="portal-3" position="0 0 0.05">
-                    <a-box width="0.5" height="0.65" depth="0.05" color="#222" opacity="0.9" position="0 0 0">
-                        <a-plane id="content-3" visible="false" position="0 0 0.03" width="0.46" height="0.6" color="white">
-                            <a-text value="ERVAIS\nSAGRADOS\nRESTAURADOS" align="center" color="#2e7d32" width="1.5" position="0 0 0.01"></a-text>
-                        </a-plane>
-                        <a-text id="txt-3" value="BLOQUEADO\nPrecisa: Cuia" align="center" position="0 0 0.03" color="#ff4444" width="1.5"></a-text>
-                    </a-box>
-                </a-entity>
+                <a-entity id="portal-3-fechado"
+                          gltf-model="#modelo-portal3-fechado"
+                          position="0 0 0.05"
+                          rotation="90 0 0"
+                          scale="0.3 0.3 0.3"
+                          visible="true"></a-entity>
+                <a-entity id="portal-3-aberto"
+                          gltf-model="#modelo-portal3-aberto"
+                          position="0 0 0.05"
+                          rotation="90 0 0"
+                          scale="0.3 0.3 0.3"
+                          visible="false"></a-entity>
             </a-entity>
         </a-scene>`;
  
@@ -432,10 +461,12 @@
  
         if (state.inventory[requiredItem]) {
             state.portals[`p${num}`] = true;
-            const content = document.getElementById(`content-${num}`);
-            const txt = document.getElementById(`txt-${num}`);
-            if (content) content.setAttribute('visible', 'true');
-            if (txt) txt.setAttribute('visible', 'false');
+ 
+            /* TROCA OS MODELOS: esconde o 'fechado', mostra o 'aberto' */
+            const fechado = document.getElementById(`portal-${num}-fechado`);
+            const aberto  = document.getElementById(`portal-${num}-aberto`);
+            if (fechado) fechado.setAttribute('visible', 'false');
+            if (aberto)  aberto.setAttribute('visible', 'true');
  
             const tapBtn = document.getElementById('tap-p' + num);
             if (tapBtn) tapBtn.classList.remove('visible');
@@ -467,25 +498,18 @@
                 document.getElementById('sim-panel').style.display = 'none';
                 document.getElementById('tap-buttons').style.display = 'none';
  
-                /* Gera o wallpaper e desenha o preview */
                 wallpaperCanvas = generateWallpaper();
                 drawPreview();
             }, 1200);
         }
     }
  
-    /* =================================================================
-       GERAÇÃO DO WALLPAPER (1080x1920 — formato de celular vertical)
-       Tudo é desenhado dinamicamente. Pra trocar texto/cores, edite
-       direto aqui dentro.
-       ================================================================= */
     function generateWallpaper() {
         const W = 1080, H = 1920;
         const canvas = document.createElement('canvas');
         canvas.width = W; canvas.height = H;
         const ctx = canvas.getContext('2d');
  
-        /* Fundo: gradiente vertical (terra escura → âmbar dourado) */
         const bg = ctx.createLinearGradient(0, 0, 0, H);
         bg.addColorStop(0,    '#0d0703');
         bg.addColorStop(0.45, '#3d2b1f');
@@ -494,35 +518,28 @@
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, W, H);
  
-        /* Luz radial central pra dar profundidade */
         const glow = ctx.createRadialGradient(W/2, H*0.45, 0, W/2, H*0.45, W*0.8);
         glow.addColorStop(0, 'rgba(255, 215, 0, 0.25)');
         glow.addColorStop(1, 'rgba(255, 215, 0, 0)');
         ctx.fillStyle = glow;
         ctx.fillRect(0, 0, W, H);
  
-        /* Padrão geométrico decorativo no topo (estilo grafismo guarani) */
         drawGuaraniBorder(ctx, W/2, 280, 12);
  
-        /* Título */
         ctx.textAlign = 'center';
         ctx.fillStyle = '#ffd700';
         ctx.font = 'bold 110px sans-serif';
         ctx.fillText('LEGADO', W/2, 480);
         ctx.fillText('RESTAURADO', W/2, 610);
  
-        /* Subtítulo */
         ctx.fillStyle = '#ffdfa8';
         ctx.font = 'italic 44px Georgia, serif';
         ctx.fillText('Sete Povos das Missões', W/2, 720);
  
-        /* Três símbolos coletados — círculos com emoji */
         const symbols = ['🧉', '✝️', '🔱'];
         symbols.forEach((sym, i) => {
             const cx = W/2 + (i - 1) * 260;
             const cy = 1060;
- 
-            /* círculo dourado de fundo */
             ctx.beginPath();
             ctx.arc(cx, cy, 110, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
@@ -530,21 +547,17 @@
             ctx.strokeStyle = '#ffd700';
             ctx.lineWidth = 4;
             ctx.stroke();
- 
-            /* emoji */
             ctx.font = '130px sans-serif';
             ctx.textBaseline = 'middle';
             ctx.fillText(sym, cx, cy + 8);
         });
         ctx.textBaseline = 'alphabetic';
  
-        /* Texto de conquista */
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 58px sans-serif';
         ctx.fillText('Conquistador dos', W/2, 1380);
         ctx.fillText('Sete Povos', W/2, 1460);
  
-        /* Data */
         const date = new Date().toLocaleDateString('pt-BR', {
             day: '2-digit', month: 'long', year: 'numeric'
         });
@@ -552,10 +565,8 @@
         ctx.font = '38px sans-serif';
         ctx.fillText(date, W/2, 1570);
  
-        /* Borda inferior decorativa */
         drawGuaraniBorder(ctx, W/2, 1700, 12);
  
-        /* Assinatura */
         ctx.fillStyle = '#ffdfa8';
         ctx.font = 'bold 32px sans-serif';
         ctx.fillText('LEGACY SCAN · UNISINOS', W/2, 1820);
@@ -563,14 +574,12 @@
         return canvas;
     }
  
-    /* Faixa decorativa estilo geométrico */
     function drawGuaraniBorder(ctx, cx, cy, count) {
         const spacing = 75;
         const startX = cx - (count * spacing) / 2 + spacing / 2;
         ctx.fillStyle = '#ffd700';
         for (let i = 0; i < count; i++) {
             const x = startX + i * spacing;
-            /* losango pequeno */
             ctx.beginPath();
             ctx.moveTo(x, cy - 14);
             ctx.lineTo(x + 14, cy);
@@ -581,7 +590,6 @@
         }
     }
  
-    /* Desenha o preview menor na tela de vitória */
     function drawPreview() {
         if (!wallpaperCanvas) return;
         const preview = document.getElementById('wallpaper-preview');
@@ -589,12 +597,6 @@
         pctx.drawImage(wallpaperCanvas, 0, 0, preview.width, preview.height);
     }
  
-    /* =================================================================
-       DOWNLOAD DO WALLPAPER
-       - Android Chrome: usa <a download> direto
-       - iOS Safari: usa Web Share API (única forma de salvar na galeria)
-       - Fallback final: abre em nova aba pra usuário fazer salvar manualmente
-       ================================================================= */
     async function downloadWallpaper() {
         if (!wallpaperCanvas) wallpaperCanvas = generateWallpaper();
  
@@ -604,7 +606,6 @@
             const filename = 'legacy-scan-wallpaper.png';
             const file = new File([blob], filename, { type: 'image/png' });
  
-            /* iOS / mobile: tenta Web Share API */
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
@@ -614,12 +615,10 @@
                     });
                     return;
                 } catch (err) {
-                    /* usuário cancelou ou erro — cai pro download direto */
                     if (err.name === 'AbortError') return;
                 }
             }
  
-            /* Android / desktop: download direto */
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
