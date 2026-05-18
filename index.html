@@ -334,12 +334,12 @@
                 <a-asset-item id="modelo-cruz"  src="./models/cruz.glb"></a-asset-item>
                 <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
 
-                <a-asset-item id="modelo-portal1-fechado" src="./models/portal1-fechado.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal1-aberto"  src="./models/portal1-aberto.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal2-fechado" src="./models/portal2-fechado.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal2-aberto"  src="./models/portal2-aberto.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal3-fechado" src="./models/portal3-fechado.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal3-aberto"  src="./models/portal3-aberto.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal1-fechado" src="./models/portalF.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal1-aberto"  src="./models/portalA.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal2-fechado" src="./models/portalF.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal2-aberto"  src="./models/portalA.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal3-fechado" src="./models/portalF.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal3-aberto"  src="./models/portalA.glb"></a-asset-item>
             </a-assets>
 
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -530,24 +530,7 @@
             const response = await fetch(WALLPAPER_URL);
             if (!response.ok) throw new Error('Wallpaper não encontrado');
             const blob = await response.blob();
-            const file = new File([blob], WALLPAPER_FILE, { type: blob.type });
 
-            /* iOS / mobile: tenta Web Share API */
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Legacy Scan',
-                        text: 'Meu wallpaper de conquista dos Sete Povos!'
-                    });
-                    return;
-                } catch (err) {
-                    if (err.name === 'AbortError') return;
-                    /* qualquer outro erro: cai pro download direto */
-                }
-            }
-
-            /* Android / desktop: download direto */
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
