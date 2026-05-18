@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Legacy Scan: O Portal dos Sete Povos</title>
- 
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
- 
+
     <style>
         html, body {
             margin: 0; padding: 0;
@@ -17,9 +17,9 @@
             background: #000;
             font-family: sans-serif;
         }
- 
+
         #ar-container { position: fixed; inset: 0; z-index: 1; display: none; }
- 
+
         #ar-container,
         #ar-container > .a-canvas,
         #ar-container video,
@@ -32,7 +32,7 @@
             top: 0 !important;
             left: 0 !important;
         }
- 
+
         #ui-layer {
             position: fixed; inset: 0;
             z-index: 100;
@@ -40,7 +40,7 @@
             display: flex; flex-direction: column;
         }
         .interactive { pointer-events: auto; }
- 
+
         #landing-page {
             position: fixed; inset: 0;
             background: linear-gradient(rgba(0,0,0,0.85), rgba(61,43,31,0.95)),
@@ -50,7 +50,7 @@
             align-items: center; justify-content: center;
             text-align: center; color: white; padding: 2rem;
         }
- 
+
         .inventory-slot {
             width: 58px; height: 58px;
             background: rgba(0,0,0,0.75);
@@ -60,6 +60,13 @@
             font-size: 26px;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             filter: grayscale(100%); opacity: 0.4;
+            overflow: hidden;
+        }
+        .inventory-slot img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            display: block;
         }
         .inventory-slot.active {
             filter: grayscale(0%); opacity: 1;
@@ -67,7 +74,7 @@
             box-shadow: 0 0 18px #ffd700;
             transform: scale(1.12);
         }
- 
+
         #msg-popup {
             background: rgba(30, 15, 5, 0.92);
             color: #ffd700;
@@ -84,7 +91,7 @@
             font-size: 14px;
         }
         #msg-popup.visible { opacity: 1; transform: translateY(0); }
- 
+
         #tap-buttons {
             position: fixed;
             bottom: 24px; left: 50%;
@@ -106,6 +113,13 @@
             align-items: center; justify-content: center;
             transition: all 0.3s;
             animation: pulse 1.5s infinite;
+            overflow: hidden;
+            padding: 0;
+        }
+        .tap-btn img {
+            width: 65%;
+            height: 65%;
+            object-fit: contain;
         }
         .tap-btn.visible { display: flex; }
         .tap-btn:active { transform: scale(0.92); background: #8b4513; }
@@ -113,7 +127,7 @@
             0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0.6); }
             50% { box-shadow: 0 0 0 16px rgba(255,215,0,0); }
         }
- 
+
         #sim-panel {
             position: fixed;
             bottom: 24px; left: 50%;
@@ -142,7 +156,7 @@
         .sim-btn.collected { border-color: #ffd700; color: #ffd700; }
         .sim-btn.portal-btn { border-color: #88f; color: #aaf; }
         .sim-btn.portal-btn.unlocked { border-color: #5f5; color: #8f8; }
- 
+
         #win-screen {
             display: none;
             position: fixed; inset: 0;
@@ -157,11 +171,13 @@
         #wallpaper-preview {
             width: 200px;
             height: auto;
+            max-height: 50vh;
             border: 3px solid #ffd700;
             border-radius: 12px;
             box-shadow: 0 0 40px rgba(255,215,0,0.35);
             margin: 1rem 0 1.5rem;
             display: block;
+            object-fit: contain;
         }
         .win-btn-primary {
             background: linear-gradient(135deg, #ffd700, #ff8f00);
@@ -188,28 +204,28 @@
             font-size: 14px;
             cursor: pointer;
         }
- 
+
         .a-enter-vr, .a-enter-ar, .a-enter-vr-button { display: none !important; }
         .mindar-ui-overlay { display: none !important; }
     </style>
 </head>
 <body>
- 
+
 <div id="ar-container"></div>
- 
+
 <div id="ui-layer">
- 
+
     <div id="landing-page">
         <h1 class="text-4xl font-serif font-bold text-yellow-500 mb-2 tracking-tighter uppercase">Legacy Scan</h1>
         <h2 class="text-lg italic text-yellow-100 mb-8 opacity-80">O Portal dos Sete Povos</h2>
         <p class="max-w-xs mb-6 text-sm leading-relaxed">
             As Missões perderam a sua cor. Escaneie as imagens sagradas, colete as chaves e ative os portais para restaurar a memória dos Sete Povos.
         </p>
- 
+
         <div class="bg-yellow-900/50 border border-yellow-600 rounded-xl p-3 max-w-xs mb-8 text-xs text-yellow-200">
             ⚠️ Aponte para a imagem e toque no botão dourado para coletar a chave.
         </div>
- 
+
         <button onclick="startApp()" class="interactive bg-yellow-700 hover:bg-yellow-600 px-10 py-4 rounded-full font-bold text-lg border-2 border-yellow-500 shadow-2xl transition-all active:scale-95 text-yellow-100 uppercase tracking-widest mb-4">
             Iniciar Missão
         </button>
@@ -217,38 +233,39 @@
             Modo simulação (sem câmera)
         </button>
     </div>
- 
+
     <div id="game-hud" class="hidden w-full pt-6 flex flex-col items-center">
         <div class="flex gap-4">
-            <div id="slot-cuia" class="inventory-slot" title="Cuia">🧉</div>
-            <div id="slot-cruz" class="inventory-slot" title="Cruz">✝️</div>
-            <div id="slot-lanca" class="inventory-slot" title="Lança">🔱</div>
+            <div id="slot-cuia"  class="inventory-slot" title="Cuia"><img src="./assets/icons/cuia.png"  alt="Cuia"></div>
+            <div id="slot-cruz"  class="inventory-slot" title="Cruz"><img src="./assets/icons/cruz.png"  alt="Cruz"></div>
+            <div id="slot-lanca" class="inventory-slot" title="Lança"><img src="./assets/icons/lanca.png" alt="Lança"></div>
         </div>
         <div id="msg-popup">Aponte a câmera para uma imagem marcador...</div>
     </div>
- 
+
     <div id="win-screen">
         <h2 class="text-3xl font-bold text-yellow-500 mb-2 uppercase">Legado Restaurado!</h2>
         <p class="text-gray-300 text-sm max-w-xs mb-3">
             A união da tecnologia e cultura salvou a memória missioneira. Leve este wallpaper como sua conquista.
         </p>
- 
-        <canvas id="wallpaper-preview" width="540" height="960"></canvas>
- 
+
+        <!-- Preview do wallpaper. <img> simples — fonte definida em JS -->
+        <img id="wallpaper-preview" src="" alt="Wallpaper de conquista">
+
         <button onclick="downloadWallpaper()" class="win-btn-primary">📱 Baixar Wallpaper</button>
         <button onclick="location.reload()" class="win-btn-secondary">Recomeçar</button>
     </div>
 </div>
- 
+
 <div id="tap-buttons">
-    <button id="tap-cuia"  class="tap-btn" title="Coletar Cuia"  onclick="collect('cuia')">🧉</button>
-    <button id="tap-cruz"  class="tap-btn" title="Coletar Cruz"  onclick="collect('cruz')">✝️</button>
-    <button id="tap-lanca" class="tap-btn" title="Coletar Lança" onclick="collect('lanca')">🔱</button>
+    <button id="tap-cuia"  class="tap-btn" title="Coletar Cuia"  onclick="collect('cuia')"><img src="./assets/icons/cuia.png" alt="Cuia"></button>
+    <button id="tap-cruz"  class="tap-btn" title="Coletar Cruz"  onclick="collect('cruz')"><img src="./assets/icons/cruz.png" alt="Cruz"></button>
+    <button id="tap-lanca" class="tap-btn" title="Coletar Lança" onclick="collect('lanca')"><img src="./assets/icons/lanca.png" alt="Lança"></button>
     <button id="tap-p1"    class="tap-btn" title="Ativar Portal 1" onclick="activatePortal(1,'lanca')">1️⃣</button>
     <button id="tap-p2"    class="tap-btn" title="Ativar Portal 2" onclick="activatePortal(2,'cruz')">2️⃣</button>
     <button id="tap-p3"    class="tap-btn" title="Ativar Portal 3" onclick="activatePortal(3,'cuia')">3️⃣</button>
 </div>
- 
+
 <div id="sim-panel">
     <p><strong>Modo Simulação</strong> — câmera não disponível</p>
     <div class="sim-row">
@@ -262,18 +279,23 @@
         <button id="pbtn-3" class="sim-btn portal-btn" onclick="activatePortal(3,'cuia')">Portal 3</button>
     </div>
 </div>
- 
+
 <script>
+    /* ==========================================================
+       CONFIGURAÇÃO — caminho do wallpaper que será baixado
+       Troque a extensão pra .jpg se sua arte for JPG.
+       ========================================================== */
+    const WALLPAPER_URL  = './assets/wallpaper.png';
+    const WALLPAPER_FILE = 'legacy-scan-wallpaper.png';
+
     const state = {
         inventory: { cuia: false, cruz: false, lanca: false },
         portals:   { p1: false, p2: false, p3: false },
         simMode: false
     };
- 
+
     const TARGET_MAP = ['cuia', 'cruz', 'lanca', 'p1', 'p2', 'p3'];
- 
-    let wallpaperCanvas = null;
- 
+
     function startApp() {
         if (!window.AFRAME) { alert('A-Frame não carregou. Verifique sua conexão.'); return; }
         document.getElementById('landing-page').style.display = 'none';
@@ -281,7 +303,7 @@
         notify('Iniciando AR...');
         setTimeout(buildARScene, 100);
     }
- 
+
     function startSimMode() {
         state.simMode = true;
         document.getElementById('landing-page').style.display = 'none';
@@ -289,12 +311,15 @@
         document.getElementById('sim-panel').style.display = 'flex';
         document.body.style.background = '#1a1a1a';
         notify('Modo simulação ativo.');
+        setTimeout(() => {
+            notify('Cada portal só pode ser aberto com uma chave específica', 6000);
+        }, 1500);
     }
- 
+
     function buildARScene() {
         const container = document.getElementById('ar-container');
         container.style.display = 'block';
- 
+
         container.innerHTML = `
         <a-scene
             mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
@@ -303,110 +328,85 @@
             vr-mode-ui="enabled: false"
             device-orientation-permission-ui="enabled: false"
             embedded>
- 
+
             <a-assets timeout="15000">
-                <!-- Chaves coletáveis -->
                 <a-asset-item id="modelo-cuia"  src="./models/cuia.glb"></a-asset-item>
                 <a-asset-item id="modelo-cruz"  src="./models/cruz.glb"></a-asset-item>
                 <a-asset-item id="modelo-lanca" src="./models/lanca.glb"></a-asset-item>
- 
-                <!-- Portais: dois modelos cada (estado fechado + estado aberto) -->
-                <a-asset-item id="modelo-portal1-fechado" src="./models/portalF.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal1-aberto"  src="./models/portalA.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal2-fechado" src="./models/portalF.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal2-aberto"  src="./models/portalA.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal3-fechado" src="./models/portalF.glb"></a-asset-item>
-                <a-asset-item id="modelo-portal3-aberto"  src="./models/portalA.glb"></a-asset-item>
+
+                <a-asset-item id="modelo-portal1-fechado" src="./models/portal1-fechado.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal1-aberto"  src="./models/portal1-aberto.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal2-fechado" src="./models/portal2-fechado.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal2-aberto"  src="./models/portal2-aberto.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal3-fechado" src="./models/portal3-fechado.glb"></a-asset-item>
+                <a-asset-item id="modelo-portal3-aberto"  src="./models/portal3-aberto.glb"></a-asset-item>
             </a-assets>
- 
+
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
- 
+
             <a-light type="ambient" color="#ffffff" intensity="0.8"></a-light>
             <a-light type="directional" color="#ffffff" intensity="0.6" position="1 1 1"></a-light>
- 
-            <!-- Chaves coletáveis (3 primeiros targets) -->
+
             <a-entity mindar-image-target="targetIndex: 0" id="target-cuia">
                 <a-entity id="entity-cuia"
                           gltf-model="#modelo-cuia"
                           position="0 0 0.05"
                           rotation="90 0 0"
-                          scale="0.2 0.2 0.2"></a-entity>
+                          scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
- 
+
             <a-entity mindar-image-target="targetIndex: 1" id="target-cruz">
                 <a-entity id="entity-cruz"
                           gltf-model="#modelo-cruz"
                           position="0 0 0.05"
                           rotation="90 0 0"
-                          scale="0.2 0.2 0.2"></a-entity>
+                          scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
- 
+
             <a-entity mindar-image-target="targetIndex: 2" id="target-lanca">
                 <a-entity id="entity-lanca"
                           gltf-model="#modelo-lanca"
                           position="0 0 0.05"
                           rotation="90 0 0"
-                          scale="0.2 0.2 0.2"></a-entity>
+                          scale="0.3 0.3 0.3"></a-entity>
             </a-entity>
- 
-            <!-- =========================================================
-                 PORTAIS — dois modelos cada, alterna visibilidade
-                 - 'fechado' começa visible="true"
-                 - 'aberto'  começa visible="false"
-                 - Ao ativar, JS troca os dois
-                 ========================================================= -->
- 
-            <!-- PORTAL 1 -->
+
             <a-entity mindar-image-target="targetIndex: 3" id="target-portal1">
                 <a-entity id="portal-1-fechado"
                           gltf-model="#modelo-portal1-fechado"
-                          position="0 0 0.05"
-                          rotation="90 0 0"
-                          scale="0.1 0.1 0.1"
+                          position="0 0 0.05" rotation="90 0 0" scale="0.3 0.3 0.3"
                           visible="true"></a-entity>
                 <a-entity id="portal-1-aberto"
                           gltf-model="#modelo-portal1-aberto"
-                          position="0 0 0.05"
-                          rotation="90 0 0"
-                          scale="0.1 0.1 0.1"
+                          position="0 0 0.05" rotation="90 0 0" scale="0.3 0.3 0.3"
                           visible="false"></a-entity>
             </a-entity>
- 
-            <!-- PORTAL 2 -->
+
             <a-entity mindar-image-target="targetIndex: 4" id="target-portal2">
                 <a-entity id="portal-2-fechado"
                           gltf-model="#modelo-portal2-fechado"
-                          position="0 0 0.05"
-                          rotation="90 0 0"
-                          scale="0.1 0.1 0.1"
+                          position="0 0 0.05" rotation="90 0 0" scale="0.3 0.3 0.3"
                           visible="true"></a-entity>
                 <a-entity id="portal-2-aberto"
                           gltf-model="#modelo-portal2-aberto"
-                          position="0 0 0.05"
-                          rotation="90 0 0"
-                          scale="0.1 0.1 0.1"
+                          position="0 0 0.05" rotation="90 0 0" scale="0.3 0.3 0.3"
                           visible="false"></a-entity>
             </a-entity>
- 
-            <!-- PORTAL 3 -->
+
             <a-entity mindar-image-target="targetIndex: 5" id="target-portal3">
                 <a-entity id="portal-3-fechado"
                           gltf-model="#modelo-portal3-fechado"
-                          position="0 0 0.05"
-                          rotation="90 0 0"
-                          scale="0.1 0.1 0.1"
+                          position="0 0 0.05" rotation="90 0 0" scale="0.3 0.3 0.3"
                           visible="true"></a-entity>
                 <a-entity id="portal-3-aberto"
                           gltf-model="#modelo-portal3-aberto"
-                          position="0 0 0.05"
-                          rotation="90 0 0"
-                          scale="0.1 0.1 0.1"
+                          position="0 0 0.05" rotation="90 0 0" scale="0.3 0.3 0.3"
                           visible="false"></a-entity>
             </a-entity>
         </a-scene>`;
- 
+
         const scene = container.querySelector('a-scene');
- 
+
         scene.addEventListener('loaded', () => {
             setupTargetEvents();
             const arSystem = scene.systems['mindar-image-system'];
@@ -422,13 +422,13 @@
             });
         });
     }
- 
+
     function setupTargetEvents() {
         TARGET_MAP.forEach((key, idx) => {
             const targetEl = document.querySelector(`[mindar-image-target="targetIndex: ${idx}"]`);
             if (!targetEl) return;
             const tapBtn = document.getElementById('tap-' + key);
- 
+
             targetEl.addEventListener('targetFound', () => {
                 if (tapBtn && !isCompleted(key)) tapBtn.classList.add('visible');
             });
@@ -437,13 +437,13 @@
             });
         });
     }
- 
+
     function isCompleted(key) {
         if (['cuia','cruz','lanca'].includes(key)) return state.inventory[key];
         if (['p1','p2','p3'].includes(key)) return state.portals[key];
         return false;
     }
- 
+
     function collect(item) {
         if (state.inventory[item]) { notify(`Você já tem a ${item}.`); return; }
         state.inventory[item] = true;
@@ -458,9 +458,9 @@
         const simBtn = document.getElementById(`sbtn-${item}`);
         if (simBtn) { simBtn.classList.add('collected'); simBtn.disabled = true; simBtn.style.opacity = '0.5'; }
 
-        /* Mensagem de coleta + mensagem de progresso 1.5s depois */
         notify(`✅ Chave ${item.toUpperCase()} coletada!`);
 
+        /* Mensagem de progresso 1.8s depois */
         const totalColetadas = Object.values(state.inventory).filter(v => v).length;
         setTimeout(() => {
             if (totalColetadas === 1) {
@@ -472,32 +472,31 @@
             }
         }, 1800);
     }
- 
+
     function activatePortal(num, requiredItem) {
         if (state.portals[`p${num}`]) { notify(`Portal ${num} já está ativo.`); return; }
- 
+
         if (state.inventory[requiredItem]) {
             state.portals[`p${num}`] = true;
- 
-            /* TROCA OS MODELOS: esconde o 'fechado', mostra o 'aberto' */
+
             const fechado = document.getElementById(`portal-${num}-fechado`);
             const aberto  = document.getElementById(`portal-${num}-aberto`);
             if (fechado) fechado.setAttribute('visible', 'false');
             if (aberto)  aberto.setAttribute('visible', 'true');
- 
+
             const tapBtn = document.getElementById('tap-p' + num);
             if (tapBtn) tapBtn.classList.remove('visible');
- 
+
             const pbtn = document.getElementById(`pbtn-${num}`);
             if (pbtn) { pbtn.classList.add('unlocked'); pbtn.disabled = true; pbtn.style.opacity = '0.5'; }
- 
+
             notify(`🌟 Portal ${num} restaurado!`);
             checkWin();
         } else {
             notify(`🔒 Bloqueado! Colete a ${requiredItem.toUpperCase()} primeiro.`);
         }
     }
- 
+
     function notify(text, duration = 3200) {
         const el = document.getElementById('msg-popup');
         if (!el) return;
@@ -506,7 +505,7 @@
         clearTimeout(el._t);
         el._t = setTimeout(() => el.classList.remove('visible'), duration);
     }
- 
+
     function checkWin() {
         if (state.portals.p1 && state.portals.p2 && state.portals.p3) {
             setTimeout(() => {
@@ -514,115 +513,26 @@
                 document.getElementById('game-hud').classList.add('hidden');
                 document.getElementById('sim-panel').style.display = 'none';
                 document.getElementById('tap-buttons').style.display = 'none';
- 
-                wallpaperCanvas = generateWallpaper();
-                drawPreview();
+
+                /* Preview do wallpaper */
+                document.getElementById('wallpaper-preview').src = WALLPAPER_URL;
             }, 1200);
         }
     }
- 
-    function generateWallpaper() {
-        const W = 1080, H = 1920;
-        const canvas = document.createElement('canvas');
-        canvas.width = W; canvas.height = H;
-        const ctx = canvas.getContext('2d');
- 
-        const bg = ctx.createLinearGradient(0, 0, 0, H);
-        bg.addColorStop(0,    '#0d0703');
-        bg.addColorStop(0.45, '#3d2b1f');
-        bg.addColorStop(0.85, '#8b4513');
-        bg.addColorStop(1,    '#c97a26');
-        ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, W, H);
- 
-        const glow = ctx.createRadialGradient(W/2, H*0.45, 0, W/2, H*0.45, W*0.8);
-        glow.addColorStop(0, 'rgba(255, 215, 0, 0.25)');
-        glow.addColorStop(1, 'rgba(255, 215, 0, 0)');
-        ctx.fillStyle = glow;
-        ctx.fillRect(0, 0, W, H);
- 
-        drawGuaraniBorder(ctx, W/2, 280, 12);
- 
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 110px sans-serif';
-        ctx.fillText('LEGADO', W/2, 480);
-        ctx.fillText('RESTAURADO', W/2, 610);
- 
-        ctx.fillStyle = '#ffdfa8';
-        ctx.font = 'italic 44px Georgia, serif';
-        ctx.fillText('Sete Povos das Missões', W/2, 720);
- 
-        const symbols = ['🧉', '✝️', '🔱'];
-        symbols.forEach((sym, i) => {
-            const cx = W/2 + (i - 1) * 260;
-            const cy = 1060;
-            ctx.beginPath();
-            ctx.arc(cx, cy, 110, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
-            ctx.fill();
-            ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = 4;
-            ctx.stroke();
-            ctx.font = '130px sans-serif';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(sym, cx, cy + 8);
-        });
-        ctx.textBaseline = 'alphabetic';
- 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 58px sans-serif';
-        ctx.fillText('Conquistador dos', W/2, 1380);
-        ctx.fillText('Sete Povos', W/2, 1460);
- 
-        const date = new Date().toLocaleDateString('pt-BR', {
-            day: '2-digit', month: 'long', year: 'numeric'
-        });
-        ctx.fillStyle = '#ffd700';
-        ctx.font = '38px sans-serif';
-        ctx.fillText(date, W/2, 1570);
- 
-        drawGuaraniBorder(ctx, W/2, 1700, 12);
- 
-        ctx.fillStyle = '#ffdfa8';
-        ctx.font = 'bold 32px sans-serif';
-        ctx.fillText('LEGACY SCAN · UNISINOS', W/2, 1820);
- 
-        return canvas;
-    }
- 
-    function drawGuaraniBorder(ctx, cx, cy, count) {
-        const spacing = 75;
-        const startX = cx - (count * spacing) / 2 + spacing / 2;
-        ctx.fillStyle = '#ffd700';
-        for (let i = 0; i < count; i++) {
-            const x = startX + i * spacing;
-            ctx.beginPath();
-            ctx.moveTo(x, cy - 14);
-            ctx.lineTo(x + 14, cy);
-            ctx.lineTo(x, cy + 14);
-            ctx.lineTo(x - 14, cy);
-            ctx.closePath();
-            ctx.fill();
-        }
-    }
- 
-    function drawPreview() {
-        if (!wallpaperCanvas) return;
-        const preview = document.getElementById('wallpaper-preview');
-        const pctx = preview.getContext('2d');
-        pctx.drawImage(wallpaperCanvas, 0, 0, preview.width, preview.height);
-    }
- 
+
+    /* =================================================================
+       DOWNLOAD DO WALLPAPER ESTÁTICO
+       - Android Chrome: download direto via <a download>
+       - iOS Safari: Web Share API (única forma de salvar na galeria)
+       ================================================================= */
     async function downloadWallpaper() {
-        if (!wallpaperCanvas) wallpaperCanvas = generateWallpaper();
- 
-        wallpaperCanvas.toBlob(async (blob) => {
-            if (!blob) { alert('Erro ao gerar imagem.'); return; }
- 
-            const filename = 'legacy-scan-wallpaper.png';
-            const file = new File([blob], filename, { type: 'image/png' });
- 
+        try {
+            const response = await fetch(WALLPAPER_URL);
+            if (!response.ok) throw new Error('Wallpaper não encontrado');
+            const blob = await response.blob();
+            const file = new File([blob], WALLPAPER_FILE, { type: blob.type });
+
+            /* iOS / mobile: tenta Web Share API */
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
@@ -633,20 +543,24 @@
                     return;
                 } catch (err) {
                     if (err.name === 'AbortError') return;
+                    /* qualquer outro erro: cai pro download direto */
                 }
             }
- 
+
+            /* Android / desktop: download direto */
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = filename;
+            a.download = WALLPAPER_FILE;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }, 'image/png');
+        } catch (err) {
+            alert('Erro ao baixar wallpaper: ' + err.message);
+        }
     }
 </script>
- 
+
 </body>
 </html>
